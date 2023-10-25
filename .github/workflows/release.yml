@@ -16,7 +16,7 @@ permissions:
 jobs:
   push-postgres:
     name: Opensight Postgres
-    runs: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,4 +33,7 @@ jobs:
             org.opencontainers.image.base.name=postgres
           image-tags: |
             type=raw,value=${{ inputs.version }}
+          registry: ${{ vars.IMAGE_REGISTRY }}
+          registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
+
