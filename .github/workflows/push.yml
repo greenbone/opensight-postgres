@@ -36,4 +36,6 @@ jobs:
           registry: ${{ vars.IMAGE_REGISTRY }}
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
-
+      - name: Image digest to summary
+        run: |
+          echo 'Digest: ${{ steps.build-and-push.outputs.digest }}' >> $GITHUB_STEP_SUMMARY
