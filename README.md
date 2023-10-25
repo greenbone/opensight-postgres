@@ -4,6 +4,8 @@
 
 [![GitHub releases](https://img.shields.io/github/release/greenbone/opensight-postgres.svg)](https://github.com/greenbone/opensight-postgres/releases)
 
+Opensight-Postgres is utilized to provide our Opensight services with the appropriate PostgreSQL container versions.
+
 ## Maintainer
 
 This project is maintained by [Greenbone AG](https://www.greenbone.net/).
