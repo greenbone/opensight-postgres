@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Set the postgres version to release."
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  push-postgres:
+    name: Opensight Postgres
+    runs: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build and Push
+        id: build-and-push
+        uses: greenbone/actions/container-build-push-generic@v3
+        with:
+          build-args: "POSTGRES_VERSION=${{ inputs.version }}"
+          cosign-key: ${{ secrets.COSIGN_KEY_OPENSIGHT }}
+          cosign-key-password: ${{ secrets.COSIGN_KEY_PASSWORD_OPENSIGHT }}
+          image-url: ${{ vars.IMAGE_REGISTRY }}/${{ github.repository }}
+          image-labels: |
+            org.opencontainers.image.vendor=Greenbone
+            org.opencontainers.image.base.name=postgres
+          image-tags: |
+            type=raw,value=${{ inputs.version }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
