@@ -1,20 +1,16 @@
-name: Weekly Cron Job
+name: Update PostgreSQL Version
 
 on:
   schedule:
-    # Runs at 00:00 UTC every Sunday
-    - cron: '0 0 * * 0'
+    - cron: '0 0 * * 0' # Every Sunday at 00:00 UTC
 
 jobs:
-  build:
+  update-postgres-version:
     runs-on: ubuntu-latest
 
     steps:
     - name: Check out the repository
       uses: actions/checkout@v2
-
-    - name: Fetch latest version of postgres docker image
-      run: 
 
     - name: Find and Update PostgreSQL Version
       run: |
@@ -25,9 +21,20 @@ jobs:
         current_tag=$(grep -oP 'postgres:\K.*' Dockerfile)
 
         if [ "$latest_tag" != "$current_tag" ]; then
-        sed -i "s/postgres:$current_tag/postgres:$latest_tag/" Dockerfile
-        echo "Dockerfile updated to postgres:$latest_tag"
-        echo "POSTGRES_VERSION_UPDATED=true" >> $GITHUB_ENV
+          sed -i "s/postgres:$current_tag/postgres:$latest_tag/" Dockerfile
+          echo "Dockerfile updated to postgres:$latest_tag"
+          echo "POSTGRES_VERSION_UPDATED=true" >> $GITHUB_ENV
         else
-        echo "Dockerfile is up to date with postgres:$latest_tag"
+          echo "Dockerfile is up to date with postgres:$latest_tag"
         fi
+
+    - name: Create Pull Request
+      if: env.POSTGRES_VERSION_UPDATED == 'true'
+      uses: peter-evans/create-pull-request@v3
+      with:
+        commit-message: Update PostgreSQL to latest version
+        title: '[Automated] Update PostgreSQL to latest version'
+        body: 'This is an auto-generated PR with the latest version of PostgreSQL.'
+        branch: update-postgres-version
+        delete-branch: true
+        signoff: false
