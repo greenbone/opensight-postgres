@@ -1,0 +1,33 @@
+name: Weekly Cron Job
+
+on:
+  schedule:
+    # Runs at 00:00 UTC every Sunday
+    - cron: '0 0 * * 0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v2
+
+    - name: Fetch latest version of postgres docker image
+      run: 
+
+    - name: Find and Update PostgreSQL Version
+      run: |
+        # Fetch the latest tag from PostgreSQL Docker Hub
+        latest_tag=$(curl -s https://registry.hub.docker.com/v1/repositories/postgres/tags | jq -r '.[] | .name' | grep -v -e 'alpine' -e 'beta' -e 'rc' | sort -V | tail -n1)
+
+        # Check and update the Dockerfile
+        current_tag=$(grep -oP 'postgres:\K.*' Dockerfile)
+
+        if [ "$latest_tag" != "$current_tag" ]; then
+        sed -i "s/postgres:$current_tag/postgres:$latest_tag/" Dockerfile
+        echo "Dockerfile updated to postgres:$latest_tag"
+        echo "POSTGRES_VERSION_UPDATED=true" >> $GITHUB_ENV
+        else
+        echo "Dockerfile is up to date with postgres:$latest_tag"
+        fi
