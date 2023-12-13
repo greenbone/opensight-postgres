@@ -1,40 +1,121 @@
-name: Update PostgreSQL Version
+name: Scheduled postgres image version upgrade 
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # Every Sunday at 00:00 UTC
+    # Runs at 00:00 UTC every Monday
+    - cron: '0 0 * * 1'
 
 jobs:
-  update-postgres-version:
+  # Job to update Postgres digests based on new image versions
+  update-postgres-digests:
+    name: Update Postgres Digests
     runs-on: ubuntu-latest
-
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      changes_made: ${{ steps.update-digests.outputs.changes_made }}
     steps:
-    - name: Check out the repository
-      uses: actions/checkout@v2
+      # Checkout the code at the push event
+      - name: Checkout the repository
+        uses: actions/checkout@v4
 
-    - name: Find and Update PostgreSQL Version
-      run: |
-        # Fetch the latest tag from PostgreSQL Docker Hub
-        latest_tag=$(curl -s https://registry.hub.docker.com/v1/repositories/postgres/tags | jq -r '.[] | .name' | grep -v -e 'alpine' -e 'beta' -e 'rc' | sort -V | tail -n1)
+      # Setup Git credentials for the push operation
+      - name: Setup Git credentials 
+        uses: greenbone/actions/set-github-user@v3
+        
+      # Fetch and pull image versions, update digests, and push changes
+      - name: Fetch Image Versions, Pull Images, Update Digests, and Push Changes
+        id: update-digests
+        run: |
+          
+          # Set GitHub username and personal access token as secrets
+          GITHUB_USERNAME="${{ secrets.GREENBONE_BOT }}"
+          GITHUB_TOKEN="${{ secrets.GREENBONE_BOT_TOKEN }}"
 
-        # Check and update the Dockerfile
-        current_tag=$(grep -oP 'postgres:\K.*' Dockerfile)
+          # Set the image name
+          IMAGE="greenbone/opensight-postgres"
 
-        if [ "$latest_tag" != "$current_tag" ]; then
-          sed -i "s/postgres:$current_tag/postgres:$latest_tag/" Dockerfile
-          echo "Dockerfile updated to postgres:$latest_tag"
-          echo "POSTGRES_VERSION_UPDATED=true" >> $GITHUB_ENV
-        else
-          echo "Dockerfile is up to date with postgres:$latest_tag"
-        fi
+          # Fetching a token for GitHub Container Registry access
+          TOKEN=$(curl -s -u $GITHUB_USERNAME:$GITHUB_TOKEN "https://ghcr.io/token?service=ghcr.io&scope=repository:$IMAGE:pull" | jq -r .token)
 
-    - name: Create Pull Request
-      if: env.POSTGRES_VERSION_UPDATED == 'true'
-      uses: peter-evans/create-pull-request@v3
-      with:
-        commit-message: Update PostgreSQL to latest version
-        title: '[Automated] Update PostgreSQL to latest version'
-        body: 'This is an auto-generated PR with the latest version of PostgreSQL.'
-        branch: update-postgres-version
-        delete-branch: true
-        signoff: false
+          # Fetching available image versions from the registry
+          IMAGE_VERSIONS=$(curl -s -H "Authorization: Bearer $TOKEN" "https://ghcr.io/v2/$IMAGE/tags/list" | jq -r '.tags[]' | grep -E '^[0-9]+(\.[0-9]+)*$')
+
+          # Extracting unique major versions for updates
+          UNIQUE_MAJOR_VERSIONS=$(echo "$IMAGE_VERSIONS" | grep -oE '^[0-9]+' | sort -u)
+
+          # File to store the digests
+          DIGESTS_FILE="postgres_digests.txt"
+          # Create the file if it doesn't exist
+          touch $DIGESTS_FILE
+
+          # Flag to track changes
+          changes_made=false
+
+          # Loop through each unique major version to pull and check digests
+          for MAJOR_VERSION in $UNIQUE_MAJOR_VERSIONS; do
+          # Pull the latest image for this major version from Docker Hub
+              podman pull postgres:$MAJOR_VERSION
+
+              # Get the digest of the pulled image
+              NEW_DIGEST=$(podman image inspect postgres:$MAJOR_VERSION -f '{{index .RepoDigests 0}}')
+              NEW_DIGEST_SHORT=$(echo $NEW_DIGEST | cut -d '@' -f 2)
+
+              # Update or add the digest if it's not already present
+              if grep -q "^$MAJOR_VERSION:" $DIGESTS_FILE; then
+                  CURRENT_DIGEST=$(grep "^$MAJOR_VERSION:" $DIGESTS_FILE | cut -d ' ' -f 2)
+                  if [ "$NEW_DIGEST_SHORT" != "$CURRENT_DIGEST" ]; then
+                    sed -i "s/^$MAJOR_VERSION:.*/$MAJOR_VERSION: $NEW_DIGEST_SHORT/" $DIGESTS_FILE
+                    changes_made=true
+                  fi
+              else
+                  echo "$MAJOR_VERSION: $NEW_DIGEST_SHORT" >> $DIGESTS_FILE
+                  changes_made=true
+              fi
+          done
+
+          # Communicate changes to later steps
+          echo "changes_made=$changes_made" >> $GITHUB_OUTPUT
+          echo "Changes made: $changes_made"
+
+          # Commit and push the digest file if changes are made
+          if [ "$changes_made" = true ]; then
+              git add $DIGESTS_FILE
+              git commit -m "Update PostgreSQL digests"
+              git push
+              echo "Changes pushed to the repository."
+          else
+              echo "No changes to commit."
+          fi
+
+      # Generate a matrix for the build job, including only versions that have changed
+      - name: Generate matrix for versions
+        id: set-matrix
+        run: |
+          MATRIX="{\"include\": ["
+          while read -r line; do
+            VERSION=$(echo $line | cut -d ':' -f 1)
+            # Ensure the matrix is formed correctly
+            if [ -n "$MATRIX" ] && [ "${MATRIX}" != "{\"include\": [" ]; then
+              MATRIX="$MATRIX,"
+            fi
+            MATRIX="$MATRIX{\"version\":\"$VERSION\"}"
+          done < postgres_digests.txt
+          MATRIX="$MATRIX]}"
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+  
+  # Build job, triggered only if there were changes in the digests
+  build:
+    needs: update-postgres-digests
+    if: ${{ needs.update-postgres-digests.outputs.changes_made == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.update-postgres-digests.outputs.matrix)}}
+    steps:
+      - name: Trigger build image
+        uses: greenbone/actions/trigger-workflow@v3
+        with:
+          token: ${{ secrets.GREENBONE_BOT_TOKEN }}
+          repository: "greenbone/opensight-postgres"
+          workflow: push.yml
+          inputs: '{"version": "${{ matrix.version }}"}'
