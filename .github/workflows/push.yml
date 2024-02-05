@@ -28,7 +28,7 @@ jobs:
           cosign-key: ${{ secrets.COSIGN_KEY_OPENSIGHT }}
           cosign-key-password: ${{ secrets.COSIGN_KEY_PASSWORD_OPENSIGHT }}
           cosign-tlog-upload: "false"
-          image-url: ${{ vars.IMAGE_REGISTRY }}/${{ github.repository }}
+          image-url: ${{ github.repository }}
           image-labels: |
             org.opencontainers.image.vendor=Greenbone
             org.opencontainers.image.base.name=postgres
