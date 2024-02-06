@@ -50,44 +50,45 @@ def dataclass_nested(cls):
 @dataclass
 @dataclass_nested
 class DockerTagsImage:
-    architecture: str = field(default_factory=str)
-    features: str = field(default_factory=str)
-    variant: Optional[str] = field(default_factory=str)
-    digest: str = field(default_factory=str)
-    os: str = field(default_factory=str)
-    os_features: str = field(default_factory=str)
-    os_version: Optional[str] = field(default_factory=str)
-    size: int = field(default_factory=int)
-    status: str = field(default_factory=str)
-    last_pulled: Optional[str] = field(default_factory=str)
-    last_pushed: Optional[str] = field(default_factory=str)
-
+    architecture: str
+    features: str
+    os: str
+    os_features: str
+    size: int
+    status: str
+    # Optional
+    digest: Optional[str] = None
+    os_version: Optional[str] = None
+    last_pulled: Optional[str] = None
+    last_pushed: Optional[str] = None
+    variant: Optional[str] = None
 
 @dataclass
 @dataclass_nested
 class DockerTagsResult:
-    creator: int = field(default_factory=int)
-    id: int = field(default_factory=int)
-    images: list[DockerTagsImage] = field(default_factory=list)
-    last_updated: str = field(default_factory=str)
-    last_updater: int = field(default_factory=str)
-    last_updater_username: str = field(default_factory=str)
-    name: str = field(default_factory=str)
-    repository: int = field(default_factory=int)
-    full_size: int = field(default_factory=int)
-    v2: bool = field(default_factory=bool)
-    tag_status: str = field(default_factory=str)
-    tag_last_pulled: Optional[str] = field(default_factory=str)
-    tag_last_pushed: Optional[str] = field(default_factory=str)
-    media_type: str = field(default_factory=str)
-    content_type: str = field(default_factory=str)
-    digest: str = field(default_factory=str)
-
+    creator: int
+    id: int
+    images: list[DockerTagsImage]
+    last_updated: str
+    last_updater: int
+    last_updater_username: str
+    name: str
+    repository: int
+    full_size: int
+    v2: bool
+    tag_status: str
+    media_type: str
+    content_type: str
+    # Optional
+    digest: Optional[str] = None
+    tag_last_pulled: Optional[str] = None
+    tag_last_pushed: Optional[str] = None
 
 @dataclass
 @dataclass_nested
 class DockerTagsPage:
-    count: int = field(default_factory=int)
-    next: Optional[str] = field(default_factory=str)
-    previous: Optional[str] = field(default_factory=str)
-    results: list[DockerTagsResult] = field(default_factory=list)
+    count: int
+    results: list[DockerTagsResult]
+    # Optional
+    next: Optional[str] = None
+    previous: Optional[str] = None
