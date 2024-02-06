@@ -1,4 +1,4 @@
-from typing import Optional, Union, types
+from typing import Optional, types
 from dataclasses import dataclass, field, fields, asdict, is_dataclass
 import re
 
@@ -59,8 +59,8 @@ class DockerTagsImage:
     os_version: Optional[str] = field(default_factory=str)
     size: int = field(default_factory=int)
     status: str = field(default_factory=str)
-    last_pulled: Union[str, None] = field(default_factory=str)
-    last_pushed: Union[str, None] = field(default_factory=str)
+    last_pulled: Optional[str] = field(default_factory=str)
+    last_pushed: Optional[str] = field(default_factory=str)
 
 
 @dataclass
@@ -77,8 +77,8 @@ class DockerTagsResult:
     full_size: int = field(default_factory=int)
     v2: bool = field(default_factory=bool)
     tag_status: str = field(default_factory=str)
-    tag_last_pulled: Union[str, None] = field(default_factory=str)
-    tag_last_pushed: Union[str, None] = field(default_factory=str)
+    tag_last_pulled: Optional[str] = field(default_factory=str)
+    tag_last_pushed: Optional[str] = field(default_factory=str)
     media_type: str = field(default_factory=str)
     content_type: str = field(default_factory=str)
     digest: str = field(default_factory=str)
@@ -88,6 +88,6 @@ class DockerTagsResult:
 @dataclass_nested
 class DockerTagsPage:
     count: int = field(default_factory=int)
-    next: Union[str, None] = field(default_factory=str)
-    previous: Union[str, None] = field(default_factory=str)
+    next: Optional[str] = field(default_factory=str)
+    previous: Optional[str] = field(default_factory=str)
     results: list[DockerTagsResult] = field(default_factory=list)
