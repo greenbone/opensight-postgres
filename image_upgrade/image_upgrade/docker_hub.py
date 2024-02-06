@@ -49,12 +49,11 @@ class DockerHub(httpx.Client):
 
     def repository_get_tags(self, repository: str, namespace: str = None):
         dcl: list[DockerTagsResult] = []
-        dc: DockerTagsPage = self.repository_get_tags_by_page(repository, namespace = namespace)
+        dc: DockerTagsPage = self.repository_get_tags_by_page(
+            repository, namespace=namespace
+        )
         dcl.extend(dc.results)
         while dc.next != None:
-            print(dc.next)
             dc = DockerTagsPage(**self._get_data_as_dict(dc.next))
             dcl.extend(dc.results)
         return dcl
-
-
