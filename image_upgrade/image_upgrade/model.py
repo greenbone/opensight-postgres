@@ -1,7 +1,7 @@
-from typing import Optional, types
-from dataclasses import dataclass, field, fields, asdict, is_dataclass
 import re
+from dataclasses import asdict, dataclass, field, fields, is_dataclass
 from importlib import import_module
+from typing import Optional, types
 
 
 def _dataclass_nested(self):

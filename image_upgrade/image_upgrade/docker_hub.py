@@ -1,4 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Greenbone AG
+
 import httpx
+
 from model import DockerTagsPage, DockerTagsResult
 
 
@@ -21,17 +24,13 @@ class DockerHub(httpx.Client):
         if user and password:
             self._login(user, password)
 
-    @property
-    def get_default_namespace() -> str:
-        return self.default_namespace
-
     def _get_data_as_dict(self, url: str) -> dict:
         res = self.get(url)
         res.raise_for_status()
         return res.json()
 
     def _login(self, user: str, password: str) -> None:
-        pass
+        raise NotImplementedError("Docker hub login is not implemented")
 
     def repository_get_tags_by_page(
         self,
@@ -40,10 +39,8 @@ class DockerHub(httpx.Client):
         page: int = 1,
         page_size: int = None,
     ) -> dict:
-        if not namespace:
-            namespace = self.namespace
-        if not page_size:
-            page_size = self.page_size
+        namespace = namespace or self.namespace
+        page_size = page_size or self.page_size
         url = f"/namespaces/{namespace}/repositories/{repository}/tags?page={page}&page_size={page_size}"
         return DockerTagsPage(**self._get_data_as_dict(url))
 
@@ -53,7 +50,7 @@ class DockerHub(httpx.Client):
             repository, namespace=namespace
         )
         dcl.extend(dc.results)
-        while dc.next != None:
+        while dc.next:
             dc = DockerTagsPage(**self._get_data_as_dict(dc.next))
             dcl.extend(dc.results)
         return dcl
