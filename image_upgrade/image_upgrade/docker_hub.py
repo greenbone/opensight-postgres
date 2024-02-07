@@ -25,7 +25,7 @@ class DockerHub(httpx.Client):
             self._login(user, password)
 
     def _get_data_as_dict(self, url: str) -> dict:
-        res = self.get(url)
+        res: httpx.Response = self.get(url)
         res.raise_for_status()
         return res.json()
 
@@ -39,8 +39,8 @@ class DockerHub(httpx.Client):
         page: int = 1,
         page_size: int = None,
     ) -> dict:
-        namespace = namespace or self.namespace
-        page_size = page_size or self.page_size
+        namespace: str = namespace or self.namespace
+        page_size: int = page_size or self.page_size
         url = f"/namespaces/{namespace}/repositories/{repository}/tags?page={page}&page_size={page_size}"
         return DockerTagsPage(**self._get_data_as_dict(url))
 
