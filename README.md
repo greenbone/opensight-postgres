@@ -1,6 +1,6 @@
 ![Greenbone Logo](https://www.greenbone.net/wp-content/uploads/gb_new-logo_horizontal_rgb_small.png)
 
-# opensight-postgres
+# OpenSight Postgres
 
 [![GitHub releases](https://img.shields.io/github/release/greenbone/opensight-postgres.svg)](https://github.com/greenbone/opensight-postgres/releases)
 
