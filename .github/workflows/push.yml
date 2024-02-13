@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Build and Push
         id: build-and-push
-        uses: greenbone/actions/container-build-push-generic@main
+        uses: greenbone/actions/container-build-push-generic@pascalholthaus-patch-1
         with:
           build-args: "POSTGRES_VERSION=${{ inputs.version }}"
           cosign-key: ${{ secrets.COSIGN_KEY_OPENSIGHT }}
