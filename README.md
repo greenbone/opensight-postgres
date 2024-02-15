@@ -1,6 +1,6 @@
 ![Greenbone Logo](https://www.greenbone.net/wp-content/uploads/gb_new-logo_horizontal_rgb_small.png)
 
-# opensight-postgres
+# OpenSight Postgres
 
 [![GitHub releases](https://img.shields.io/github/release/greenbone/opensight-postgres.svg)](https://github.com/greenbone/opensight-postgres/releases)
 
@@ -20,6 +20,6 @@ first.
 
 ## License
 
-Copyright (C) 2023 [Greenbone AG](https://www.greenbone.net/)
+Copyright (C) 2023-2024 [Greenbone AG](https://www.greenbone.net/)
 
 Licensed under the [GNU General Public License v3.0 or later](LICENSE).
