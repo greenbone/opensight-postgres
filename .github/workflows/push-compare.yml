@@ -1,5 +1,7 @@
 name: Push and compare postgres
 
+# This workflow is required to upgrade several postgres versions from the push-scheduled workflow.
+
 on:
   workflow_call:
     inputs:
@@ -18,6 +20,7 @@ on:
         required: true
       GREENBONE_BOT_TOKEN:
         required: true
+
 jobs:
   compare:
     runs-on:
