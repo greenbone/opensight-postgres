@@ -3,9 +3,25 @@ name: Build and Push Container
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Set the postgres version to release."
+      postgres-major-version:
+        description: "Postgres major version to release."
         type: string
+        required: true
+      charts:
+        description: "Json list with helm charts to upgrade."
+        type: string
+        required: true
+
+  workflow_call:
+    inputs:
+      postgres-major-version:
+        description: "Postgres major version to release."
+        type: string
+        required: true
+      charts:
+        description: "Json list with helm charts to upgrade."
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -15,28 +31,77 @@ permissions:
 
 jobs:
   push-postgres:
-    name: Opensight Postgres
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Build and Push
-        id: build-and-push
+        id: build
         uses: greenbone/actions/container-build-push-generic@v3
         with:
-          build-args: "POSTGRES_VERSION=${{ inputs.version }}"
+          build-args: "POSTGRES_VERSION=${{ inputs.postgres-major-version }}"
           cosign-key: ${{ secrets.COSIGN_KEY_OPENSIGHT }}
           cosign-key-password: ${{ secrets.COSIGN_KEY_PASSWORD_OPENSIGHT }}
           cosign-tlog-upload: "false"
           image-url: ${{ github.repository }}
           image-labels: |
             org.opencontainers.image.vendor=Greenbone
-            org.opencontainers.image.base.name=postgres
+            org.opencontainers.image.base.name=postgres:${{ inputs.postgres-major-version }}
           image-tags: |
-            type=raw,value=${{ inputs.version }}
+            type=raw,value=${{ inputs.postgres-major-version }}
           registry: ${{ vars.IMAGE_REGISTRY }}
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Image digest to summary
+
+      - name: helm upgrade matrix
+        id: upgrade
         run: |
-          echo 'Digest: ${{ steps.build-and-push.outputs.digest }}' >> $GITHUB_STEP_SUMMARY
+          echo "matrix=$(echo '${{ inputs.charts }}' | jq -r '{include:[.[] | {chart: ., digest: "${{ inputs.postgres-major-version }}@${{ steps.build.outputs.digest }}" }]} | @json')" >> $GITHUB_OUTPUT
+
+    outputs:
+      matrix: ${{ steps.upgrade.outputs.matrix }}
+
+  push-helm:
+    needs: push-postgres
+    if: ${{ needs.push-postgres.outputs.matrix }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.push-postgres.outputs.matrix) }}
+    steps:
+      - name: Get helm chart tags
+        id: tags
+        uses: greenbone/actions/oci-info@main
+        with:
+          repository: helm-charts/opensight-keycloak-postgres
+          namespace: greenbone
+
+      - name: Increment helm version
+        id: version
+        shell: bash
+        run: |
+          t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+.[0-9]+' | sort -n | sed q)"
+          IFS='.' read -r -a v <<< "$t"
+          v[2]=$((v[2] + 1))
+          echo "output=v$(IFS="."; echo "${v[*]// /}")" >> $GITHUB_OUTPUT
+
+      - name: Trigger service helm chart upgrade
+        if: ${{ steps.version.outputs.output }}
+        uses: greenbone/actions/trigger-workflow@v3
+        with:
+          token: ${{ secrets.GREENBONE_BOT_TOKEN }}
+          repository: "greenbone/product-helm-chart"
+          workflow: "service-chart-upgrade.yml"
+          inputs: '{"chart": "${{ matrix.chart }}", "chart-version": "${{ steps.version.outputs.output }}", "container-digest": "${{ matrix.digest }}"}'
+
+      - name: Trigger product helm chart upgrade
+        if: ${{ steps.version.outputs.output }}
+        uses: greenbone/actions/trigger-workflow@v3
+        with:
+          token: ${{ secrets.GREENBONE_BOT_TOKEN }}
+          repository: "greenbone/product-helm-chart"
+          workflow: "product-chart-upgrade.yml"
+          inputs: '{"chart": "${{ matrix.chart }}", "tag": "${{ steps.version.outputs.output }}"}'
+

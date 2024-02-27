@@ -1,0 +1,29 @@
+name: Push scheduled postgres
+
+# This workflow is necessary because PostgreSQL frequently updates its base image without specifying a patch level.
+# As a result, we must perform weekly checks for any new images.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 3'  # Runs at 00:00 every Wednesday
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  upgrade-postgres:
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - postgres-major-version: 16
+            charts: '["asset-management-postgres", "opensight-keycloak-postgres", "scan-management-postgres", "vulnerability-intelligence-postgres"]'
+    uses: ./.github/workflows/push-compare.yml
+    with:
+      postgres-major-version: ${{ matrix.postgres-major-version }}
+      charts: ${{ matrix.charts }}
+    secrets: inherit
