@@ -82,7 +82,7 @@ jobs:
     steps:
       - name: Get helm chart tags
         id: tags
-        uses: greenbone/actions/oci-info@main
+        uses: greenbone/actions/oci-info@v3
         with:
           repository: helm-charts/opensight-keycloak-postgres
           namespace: greenbone

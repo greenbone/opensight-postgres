@@ -27,14 +27,14 @@ jobs:
     steps:
       - name: Compare postgres annotation org.opencontainers.image.created
         id: compare
-        uses: greenbone/actions/oci-info@main
+        uses: greenbone/actions/oci-info@v3
         with:
           command: compare-tag-annotation
           repository: opensight-postgres
           namespace: greenbone
           compare-repository: postgres
           tag: ${{ inputs.postgres-major-version }}
-          mode: gt
+          mode: lt
     outputs:
       compare: ${{ steps.compare.outputs.output }}
 
