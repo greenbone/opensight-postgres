@@ -23,9 +23,7 @@ on:
 
 jobs:
   compare:
-    runs-on:
-      - self-hosted
-      - self-hosted-generic
+    runs-on: ubuntu-latest
     steps:
       - name: Compare postgres annotation org.opencontainers.image.created
         id: compare

@@ -17,6 +17,9 @@ permissions:
 jobs:
   upgrade-postgres:
     strategy:
+      fail-fast: false
+      # We have to run one workflow after the other here
+      # because our product Helm Chart Construction Process cannot handle multiple processes.
       max-parallel: 1
       matrix:
         include:
