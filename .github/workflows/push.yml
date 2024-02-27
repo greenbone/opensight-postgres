@@ -61,7 +61,7 @@ jobs:
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: helm upgrade matrix
+      - name: Helm upgrade matrix
         id: upgrade
         run: |
           echo "matrix=$(echo '${{ inputs.charts }}' | jq -r '{include:[.[] | {chart: ., digest: "${{ inputs.postgres-major-version }}@${{ steps.build.outputs.digest }}" }]} | @json')" >> $GITHUB_OUTPUT
