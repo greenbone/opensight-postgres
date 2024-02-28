@@ -84,7 +84,7 @@ jobs:
         id: tags
         uses: greenbone/actions/oci-info@v3
         with:
-          repository: helm-charts/opensight-keycloak-postgres
+          repository: "helm-charts/${{ matrix.chart }}"
           namespace: greenbone
 
       - name: Increment helm version
