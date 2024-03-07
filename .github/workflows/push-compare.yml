@@ -1,0 +1,48 @@
+name: Push and compare postgres
+
+# This workflow is required to upgrade several postgres versions from the push-scheduled workflow.
+
+on:
+  workflow_call:
+    inputs:
+      postgres-major-version:
+        description: "Postgres major version to release."
+        type: string
+        required: true
+      charts:
+        description: "Json list with helm charts to upgrade."
+        type: string
+        required: true
+    secrets:
+      COSIGN_KEY_OPENSIGHT:
+        required: true
+      COSIGN_KEY_PASSWORD_OPENSIGHT:
+        required: true
+      GREENBONE_BOT_TOKEN:
+        required: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare postgres annotation org.opencontainers.image.created
+        id: compare
+        uses: greenbone/actions/oci-info@v3
+        with:
+          command: compare-tag-annotation
+          repository: opensight-postgres
+          namespace: greenbone
+          compare-repository: postgres
+          tag: ${{ inputs.postgres-major-version }}
+          mode: lt
+    outputs:
+      compare: ${{ steps.compare.outputs.output }}
+
+  push-postgres:
+    needs: compare
+    if: ${{ needs.compare.outputs.compare == 'true' }}
+    uses: ./.github/workflows/push.yml
+    with:
+      postgres-major-version: ${{ inputs.postgres-major-version }}
+      charts: ${{ inputs.charts }}
+    secrets: inherit
