@@ -64,7 +64,7 @@ jobs:
       - name: Helm upgrade matrix
         id: upgrade
         run: |
-          echo "matrix=$(echo '${{ inputs.charts }}' | jq -r '{include:[.[] | {chart: ., digest: "${{ inputs.postgres-major-version }}@${{ steps.build.outputs.digest }}" }]} | @json')" >> $GITHUB_OUTPUT
+          echo "matrix=$(echo '${{ inputs.charts }}' | jq -r '{include:[.[] | {chart: ., digest: "${{ steps.build.outputs.digest }}" }]} | @json')" >> $GITHUB_OUTPUT
 
     outputs:
       matrix: ${{ steps.upgrade.outputs.matrix }}
@@ -92,7 +92,7 @@ jobs:
         shell: bash
         run: |
           # Get the latest tag filtered by postgres major version.
-          t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+.[0-9]+' | sort -n | sed q)"
+          t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+.[0-9]+' | sort -nr | sed q)"
           IFS='.' read -r -a v <<< "$t"
           # Increment patch level
           v[2]=$((v[2] + 1))
