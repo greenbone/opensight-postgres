@@ -89,7 +89,6 @@ jobs:
           user: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-
       - name: Increment helm version
         id: version
         shell: bash
