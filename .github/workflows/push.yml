@@ -86,6 +86,9 @@ jobs:
         with:
           repository: "helm-charts/${{ matrix.chart }}"
           namespace: greenbone
+          user: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Increment helm version
         id: version
