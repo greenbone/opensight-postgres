@@ -120,6 +120,7 @@ jobs:
 
   notify:
     needs:
+      - push-postgres
       - push-helm
     if: ${{ !cancelled() }}
     uses: greenbone/workflows/.github/workflows/notify-mattermost-3rd-gen.yml@main
