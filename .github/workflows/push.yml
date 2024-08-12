@@ -38,7 +38,7 @@ permissions:
 
 jobs:
   push-postgres:
-    runs-on: self-hosted-generic
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,6 +60,7 @@ jobs:
           registry: ${{ vars.IMAGE_REGISTRY }}
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
+          buildx-container: 'true'
 
       - name: Helm upgrade matrix
         id: upgrade
