@@ -60,6 +60,8 @@ jobs:
           registry: ${{ vars.IMAGE_REGISTRY }}
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
+          # For whatever reason, the native buildx doesn't build annotations!
+          buildx-container: 'true'
 
       - name: Helm upgrade matrix
         id: upgrade
