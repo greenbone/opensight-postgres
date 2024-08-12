@@ -60,6 +60,7 @@ jobs:
           registry: ${{ vars.IMAGE_REGISTRY }}
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
+          meta-annotations-levels: 'manifest,index,manifest-descriptor,index-descriptor'
 
       - name: Helm upgrade matrix
         id: upgrade
