@@ -102,6 +102,14 @@ jobs:
           v[2]=$((v[2] + 1))
           echo "output=v$(IFS="."; echo "${v[*]// /}")" >> $GITHUB_OUTPUT
 
+      - name: Trigger product compose upgrade
+        uses: greenbone/actions/trigger-workflow@v3
+        with:
+          token: ${{ secrets.GREENBONE_BOT_TOKEN }}
+          repository: "greenbone/automatix"
+          workflow: "push.yml"
+          inputs: '{"service": "${{ matrix.chart }}", "digest": "${{ matrix.digest }}", "version": "${{ steps.version.outputs.output }}"}'
+
       - name: Trigger service helm chart upgrade
         if: ${{ steps.version.outputs.output }}
         uses: greenbone/actions/trigger-workflow@v3
