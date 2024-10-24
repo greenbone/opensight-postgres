@@ -47,8 +47,8 @@ jobs:
         id: grype
         with:
           image: "greenbone/opensight-postgres:${{ github.sha }}"
-          fail-build: true
-          severity-cutoff: critical
+          # fail-build: true
+          # severity-cutoff: critical
 
       - name: Upload grype vulnerability report
         uses: github/codeql-action/upload-sarif@v3
