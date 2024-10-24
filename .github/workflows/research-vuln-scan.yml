@@ -68,10 +68,10 @@ jobs:
           image: "greenbone/opensight-postgres:${{ github.sha }}"
           args: --file=Dockerfile
 
-      - name: Upload snyk result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: build.sarif
+      #- name: Upload snyk result to GitHub Code Scanning
+       # uses: github/codeql-action/upload-sarif@v3
+        #with:
+         # sarif_file: snyk.sarif
 
       - name: Analyze for critical and high CVEs
         id: docker-scout-cves
