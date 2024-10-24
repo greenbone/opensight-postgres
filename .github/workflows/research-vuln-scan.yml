@@ -71,7 +71,7 @@ jobs:
       - name: Upload snyk result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: snyk.sarif
+          sarif_file: build.sarif
 
       - name: Analyze for critical and high CVEs
         id: docker-scout-cves
