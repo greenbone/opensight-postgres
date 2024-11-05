@@ -98,7 +98,7 @@ jobs:
           summary: true
           dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKERHUB_TOKEN }}
-          only-severities: critical, high, medium, low
+          only-severities: critical, high, medium
 
       - name: Upload docker scout SARIF result
         id: upload-sarif
