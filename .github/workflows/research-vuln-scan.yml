@@ -93,6 +93,9 @@ jobs:
           image: "greenbone/opensight-postgres:${{ github.sha }}"
           sarif-file: sarif.output.json
           summary: true
+          dockerhub-user: ${{ secrets.DOCKER_USER }}
+          dockerhub-password: ${{ secrets.DOCKER_TOKEN }}
+          # only-severities: -- default is all
 
       - name: Upload docker scout SARIF result
         id: upload-sarif
