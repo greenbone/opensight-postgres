@@ -11,65 +11,65 @@ permissions:
   contents: read
 
 jobs:
-#  trivy:
-#    permissions:
-#      contents: read # for actions/checkout to fetch code
-#      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-#      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
-#    name: Trivy
-#    runs-on: "ubuntu-20.04"
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v4
-#
-#      - name: Build an image from Dockerfile
-#        run: |
-#          docker build -t greenbone/opensight-postgres:${{ github.sha }} .
-#
-#      - name: Run Trivy vulnerability scanner
-#        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
-#        with:
-#          image-ref: 'greenbone/opensight-postgres:${{ github.sha }}'
-#          format: 'template'
-#          template: '@/contrib/sarif.tpl'
-#          output: 'trivy-results.sarif'
-#          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
-#          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
-#
-#      - name: Upload Trivy scan results to GitHub Security tab
-#        uses: github/codeql-action/upload-sarif@v3
-#        with:
-#          sarif_file: 'trivy-results.sarif'
-#          category: ${{ github.jobs[github.job].name }}
-#
-#  grype:
-#    permissions:
-#      contents: read # for actions/checkout to fetch code
-#      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-#      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
-#    name: Grype
-#    runs-on: "ubuntu-20.04"
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v4
-#
-#      - name: Build an image from Dockerfile
-#        run: |
-#          docker build -t greenbone/opensight-postgres:${{ github.sha }} .
-#
-#      - name: Run the Anchore Grype scan action
-#        uses: anchore/scan-action@d5aa5b6cb9414b0c7771438046ff5bcfa2854ed7
-#        id: grype
-#        with:
-#          image: "greenbone/opensight-postgres:${{ github.sha }}"
-#          fail-build: false
-#          severity-cutoff: low
-#
-#      - name: Upload grype vulnerability report
-#        uses: github/codeql-action/upload-sarif@v3
-#        with:
-#          sarif_file: ${{ steps.grype.outputs.sarif }}
-#          category: ${{ github.jobs[github.job].name }}
+  trivy:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+    name: Trivy
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build an image from Dockerfile
+        run: |
+          docker build -t greenbone/opensight-postgres:${{ github.sha }} .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        with:
+          image-ref: 'greenbone/opensight-postgres:${{ github.sha }}'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results.sarif'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: ${{ github.jobs[github.job].name }}
+
+  grype:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+    name: Grype
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build an image from Dockerfile
+        run: |
+          docker build -t greenbone/opensight-postgres:${{ github.sha }} .
+
+      - name: Run the Anchore Grype scan action
+        uses: anchore/scan-action@d5aa5b6cb9414b0c7771438046ff5bcfa2854ed7
+        id: grype
+        with:
+          image: "greenbone/opensight-postgres:${{ github.sha }}"
+          fail-build: false
+          severity-cutoff: low
+
+      - name: Upload grype vulnerability report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.grype.outputs.sarif }}
+          category: ${{ github.jobs[github.job].name }}
 
   docker-scout:
     permissions:
@@ -98,7 +98,7 @@ jobs:
           summary: true
           dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKERHUB_TOKEN }}
-          # only-severities: -- default is all
+          only-severities: critical, high, medium, low
 
       - name: Upload docker scout SARIF result
         id: upload-sarif
