@@ -30,8 +30,13 @@ jobs:
         uses: greenbone/actions/oci-info@v3
         with:
           command: compare-tag-annotation
+          reg-domain: ${{ vars.GREENBONE_REGISTRY }}
+          reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}
+          reg-auth-service: ${{ vars.GREENBONE_REGISTRY }}
           repository: opensight-postgres
-          namespace: greenbone
+          namespace: opensight
+          user: ${{ secrets.GREENBONE_REGISTRY_USER }}
+          password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
           compare-repository: postgres
           tag: ${{ inputs.postgres-major-version }}
           mode: lt
