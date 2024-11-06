@@ -23,7 +23,7 @@ on:
 
 jobs:
   compare:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted-generic
     steps:
       - name: Compare postgres annotation org.opencontainers.image.created
         id: compare
@@ -33,10 +33,10 @@ jobs:
           reg-domain: ${{ vars.GREENBONE_REGISTRY }}
           reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}
           reg-auth-service: ${{ vars.GREENBONE_REGISTRY }}
-          repository: opensight-postgres
-          namespace: opensight
           user: ${{ secrets.GREENBONE_REGISTRY_USER }}
           password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
+          repository: opensight-postgres
+          namespace: opensight
           compare-repository: postgres
           tag: ${{ inputs.postgres-major-version }}
           mode: lt
@@ -60,10 +60,10 @@ jobs:
           reg-domain: ${{ vars.GREENBONE_REGISTRY }}
           reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}
           reg-auth-service: ${{ vars.GREENBONE_REGISTRY }}
-          repository: opensight-postgres
-          namespace: opensight
           user: ${{ secrets.GREENBONE_REGISTRY_USER }}
           password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
+          repository: opensight-postgres
+          namespace: opensight
 
       - name: Increment opensight-postgres service version
         if: ${{ steps.compare.outputs.output == 'true' }}
