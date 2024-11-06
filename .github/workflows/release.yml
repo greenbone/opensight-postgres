@@ -12,6 +12,7 @@ on:
         type: string
         required: true
 
+# Can be removed after switch to greenbone registry
 permissions:
   contents: read
   packages: write
@@ -19,7 +20,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  push-postgres:
+  release:
     runs-on: self-hosted-generic
     steps:
       - name: Checkout
@@ -49,81 +50,22 @@ jobs:
           minor="${dv[1]}"
           echo "output=${{ inputs.postgres-major-version }}.$minor.0" >> $GITHUB_OUTPUT
 
-      - name: Build and Push Greenbone Registry
-        id: build-greenbone
-        uses: greenbone/actions/container-build-push-generic@v3
-        with:
-          build-args: "POSTGRES_VERSION=${{ inputs.postgres-major-version }}"
-          cosign-key: ${{ secrets.COSIGN_KEY_OPENSIGHT }}
-          cosign-key-password: ${{ secrets.COSIGN_KEY_PASSWORD_OPENSIGHT }}
-          cosign-tlog-upload: "false"
-          image-url: opensight/opensight-postgres
-          image-labels: |
-            org.opencontainers.image.vendor=Greenbone
-            org.opencontainers.image.base.name=postgres:${{ inputs.postgres-major-version }}
-          image-tags: |
-            type=raw,value=${{ inputs.postgres-major-version }}
-            type=raw,value=${{ steps.version.outputs.output }}
-          registry: ${{ vars.GREENBONE_REGISTRY }}
-          registry-username: ${{ secrets.GREENBONE_REGISTRY_USER }}
-          registry-password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
-          # For whatever reason, the native buildx doesn't build annotations!
-          buildx-container: 'true'
-
-      # Remove after switch to greenbone registry
-      - name: Build and Push
-        id: build
-        uses: greenbone/actions/container-build-push-generic@v3
-        with:
-          build-args: "POSTGRES_VERSION=${{ inputs.postgres-major-version }}"
-          cosign-key: ${{ secrets.COSIGN_KEY_OPENSIGHT }}
-          cosign-key-password: ${{ secrets.COSIGN_KEY_PASSWORD_OPENSIGHT }}
-          cosign-tlog-upload: "false"
-          image-url: ${{ github.repository }}
-          image-labels: |
-            org.opencontainers.image.vendor=Greenbone
-            org.opencontainers.image.base.name=postgres:${{ inputs.postgres-major-version }}
-          image-tags: |
-            type=raw,value=${{ inputs.postgres-major-version }}
-            type=raw,value=${{ steps.version.outputs.output }}
-          registry: ${{ vars.IMAGE_REGISTRY }}
-          registry-username: ${{ github.actor }}
-          registry-password: ${{ secrets.GITHUB_TOKEN }}
-          # For whatever reason, the native buildx doesn't build annotations!
-          buildx-container: 'true'
-
-      # After switch to greenbone registry change digest and image-url
-      - name: Service upgrade matrix
-        id: upgrade
-        run: |
-          echo "matrix=$(echo '${{ inputs.services }}' | jq -r '{include:[.[] | {service: ., "image-url": "${{ github.repository }}", digest: "${{ steps.build.outputs.digest }}", version: "${{ steps.version.outputs.output }}" }]} | @json')" >> $GITHUB_OUTPUT
-
     outputs:
-      matrix: ${{ steps.upgrade.outputs.matrix }}
+      version: ${{ steps.version.outputs.output }}
 
-  push-service:
-    needs: push-postgres
-    if: ${{ needs.push-postgres.outputs.matrix }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      # We have to run one workflow after the other here
-      # because our product compose Construction Process cannot handle multiple processes.
-      max-parallel: 1
-      matrix: ${{ fromJSON(needs.push-postgres.outputs.matrix) }}
-    steps:
-      - name: Trigger product compose upgrade
-        uses: greenbone/actions/trigger-workflow@v3
-        with:
-          token: ${{ secrets.GREENBONE_BOT_TOKEN }}
-          repository: "greenbone/automatix"
-          workflow: "push.yml"
-          inputs: '{"service": "${{ matrix.service }}", "image-url": "${{ matrix.image-url }}", "digest": "${{ matrix.digest }}", "version": "${{ matrix.version }}"}'
+  push-postgres:
+    needs: compare
+    uses: ./.github/workflows/push.yml
+    with:
+      postgres-major-version: ${{ inputs.postgres-major-version }}
+      services: ${{ inputs.services }}
+      version: ${{ needs.release.outputs.version }}
+    secrets: inherit
 
   notify:
     needs:
+      - release
       - push-postgres
-      - push-service
     if: ${{ !cancelled() }}
     uses: greenbone/workflows/.github/workflows/notify-mattermost-3rd-gen.yml@main
     with:

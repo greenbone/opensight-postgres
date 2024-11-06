@@ -4,11 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       postgres-major-version:
-        description: "Postgres major version to release."
+        description: "Postgres major version to use for release."
         type: string
         required: true
       services:
         description: "Json list with postgres services to upgrade."
+        type: string
+        required: true
+      version:
+        description: "Opensight-postgres version to release."
         type: string
         required: true
 
@@ -22,6 +26,10 @@ on:
         description: "Json list with postgres services to upgrade."
         type: string
         required: true
+      version:
+        description: "Opensight-postgres version to release."
+        type: string
+        required: true
     secrets:
       COSIGN_KEY_OPENSIGHT:
         required: true
@@ -30,6 +38,7 @@ on:
       GREENBONE_BOT_TOKEN:
         required: true
 
+# Can be removed after switch to greenbone registry
 permissions:
   contents: read
   packages: write
@@ -42,52 +51,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Get dockerhub postgres service tags
-        id: dtags
-        uses: greenbone/actions/oci-info@v3
-        with:
-          repository: postgres
-          namespace: library
-          reg-domain: registry-1.docker.io
-          reg-auth-domain: auth.docker.io
-          reg-auth-service: registry.docker.io
-
-      - name: Get opensight-postgres service tags
-        id: tags
-        uses: greenbone/actions/oci-info@v3
-        with:
-          reg-domain: ${{ vars.GREENBONE_REGISTRY }}
-          reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}
-          reg-auth-service: ${{ vars.GREENBONE_REGISTRY }}
-          repository: opensight-postgres
-          namespace: opensight
-          user: ${{ secrets.GREENBONE_REGISTRY_USER }}
-          password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
-
-      - name: Increment opensight-postgres service version
-        id: version
-        shell: bash
-        run: |
-          # Get latest minor version from dockerhub
-          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
-          if ! [ "$dt" ]; then
-            echo 'No postgres release in dockerhub found for ${{ inputs.postgres-major-version }}'
-            exit 1
-          fi
-          IFS='.' read -r -a dv <<< "$dt"
-          minor="${dv[1]}"
-
-          # Get the latest tag filtered by postgres major version.
-          t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E "${{ inputs.postgres-major-version }}.$minor.[0-9]+$" | sort -Vr | sed q)"
-          if ! [ "$t" ]; then
-            t="${{ inputs.postgres-major-version }}.$minor.0"
-          fi
-
-          # Increment patch level
-          IFS='.' read -r -a v <<< "$t"
-          v[2]=$((v[2] + 1))
-          echo "output=v$(IFS="."; echo "${v[*]// /}")" >> $GITHUB_OUTPUT
 
       - name: Build and Push Greenbone Registry
         id: build-greenbone
@@ -103,7 +66,7 @@ jobs:
             org.opencontainers.image.base.name=postgres:${{ inputs.postgres-major-version }}
           image-tags: |
             type=raw,value=${{ inputs.postgres-major-version }}
-            type=raw,value=${{ steps.version.outputs.output }}
+            type=raw,value=${{ inputs.version }}
           registry: ${{ vars.GREENBONE_REGISTRY }}
           registry-username: ${{ secrets.GREENBONE_REGISTRY_USER }}
           registry-password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
@@ -125,7 +88,7 @@ jobs:
             org.opencontainers.image.base.name=postgres:${{ inputs.postgres-major-version }}
           image-tags: |
             type=raw,value=${{ inputs.postgres-major-version }}
-            type=raw,value=${{ steps.version.outputs.output }}
+            type=raw,value=${{ inputs.version }}
           registry: ${{ vars.IMAGE_REGISTRY }}
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
@@ -136,7 +99,7 @@ jobs:
       - name: Service upgrade matrix
         id: upgrade
         run: |
-          echo "matrix=$(echo '${{ inputs.services }}' | jq -r '{include:[.[] | {service: ., "image-url": "${{ github.repository }}", digest: "${{ steps.build.outputs.digest }}", version: "${{ steps.version.outputs.output }}" }]} | @json')" >> $GITHUB_OUTPUT
+          echo "matrix=$(echo '${{ inputs.services }}' | jq -r '{include:[.[] | {service: ., "image-url": "${{ github.repository }}", digest: "${{ steps.build.outputs.digest }}", version: "${{ inputs.version }}" }]} | @json')" >> $GITHUB_OUTPUT
 
     outputs:
       matrix: ${{ steps.upgrade.outputs.matrix }}
@@ -159,13 +122,3 @@ jobs:
           repository: "greenbone/automatix"
           workflow: "push.yml"
           inputs: '{"service": "${{ matrix.service }}", "image-url": "${{ matrix.image-url }}", "digest": "${{ matrix.digest }}", "version": "${{ matrix.version }}"}'
-
-  notify:
-    needs:
-      - push-postgres
-      - push-service
-    if: ${{ !cancelled() }}
-    uses: greenbone/workflows/.github/workflows/notify-mattermost-3rd-gen.yml@main
-    with:
-      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
-    secrets: inherit

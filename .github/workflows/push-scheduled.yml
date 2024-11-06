@@ -8,6 +8,7 @@ on:
   schedule:
     - cron: '0 0 * * 3'  # Runs at 00:00 every Wednesday
 
+# Can be removed after switch to greenbone registry
 permissions:
   contents: read
   packages: write
@@ -29,4 +30,13 @@ jobs:
     with:
       postgres-major-version: ${{ matrix.postgres-major-version }}
       services: ${{ matrix.services }}
+    secrets: inherit
+
+  notify:
+    needs:
+      - upgrade-postgres
+    if: ${{ !cancelled() }}
+    uses: greenbone/workflows/.github/workflows/notify-mattermost-3rd-gen.yml@main
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
     secrets: inherit
