@@ -30,19 +30,23 @@ jobs:
         uses: greenbone/actions/oci-info@v3
         with:
           repository: postgres
+          namespace: library
+          reg-domain: registry-1.docker.io
+          reg-auth-domain: auth.docker.io
+          reg-auth-service: registry.docker.io
 
       - name: Increment opensight-postgres service version
         id: version
         shell: bash
         run: |
           # Get latest minor version from dockerhub
-          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '^${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
+          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
           if ! [ "$dt" ]; then
             echo "No minor found!"
             exit 1
           fi
-          IFS='.' read -r -a dv <<< "$t"
-          minor="${v[1]}"
+          IFS='.' read -r -a dv <<< "$dt"
+          minor="${dv[1]}"
           echo "output=${{ inputs.postgres-major-version }}.$minor.0" >> $GITHUB_OUTPUT
 
       - name: Build and Push Greenbone Registry
