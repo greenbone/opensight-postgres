@@ -9,8 +9,8 @@ on:
         description: "Postgres major version to release."
         type: string
         required: true
-      charts:
-        description: "Json list with helm charts to upgrade."
+      services:
+        description: "Json list with postgres services to upgrade."
         type: string
         required: true
     secrets:
@@ -49,5 +49,5 @@ jobs:
     uses: ./.github/workflows/push.yml
     with:
       postgres-major-version: ${{ inputs.postgres-major-version }}
-      charts: ${{ inputs.charts }}
+      services: ${{ inputs.services }}
     secrets: inherit

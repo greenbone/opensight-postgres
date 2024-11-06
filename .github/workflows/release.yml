@@ -96,7 +96,7 @@ jobs:
       - name: Service upgrade matrix
         id: upgrade
         run: |
-          echo "matrix=$(echo '${{ inputs.services }}' | jq -r '{include:[.[] | {service: ., image-url: "${{ github.repository }}", digest: "${{ steps.build.outputs.digest }}", version: "${{ steps.version.outputs.output }}" }]} | @json')" >> $GITHUB_OUTPUT
+          echo "matrix=$(echo '${{ inputs.services }}' | jq -r '{include:[.[] | {service: ., "image-url": "${{ github.repository }}", digest: "${{ steps.build.outputs.digest }}", version: "${{ steps.version.outputs.output }}" }]} | @json')" >> $GITHUB_OUTPUT
 
     outputs:
       matrix: ${{ steps.upgrade.outputs.matrix }}
