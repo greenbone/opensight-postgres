@@ -32,7 +32,7 @@ jobs:
           command: compare-tag-annotation
           reg-domain: ${{ vars.GREENBONE_REGISTRY }}
           reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}
-          reg-auth-service: ${{ vars.GREENBONE_REGISTRY }}
+          reg-auth-service: harbor-registry
           user: ${{ secrets.GREENBONE_REGISTRY_USER }}
           password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
           repository: opensight-postgres
@@ -59,7 +59,7 @@ jobs:
         with:
           reg-domain: ${{ vars.GREENBONE_REGISTRY }}
           reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}
-          reg-auth-service: ${{ vars.GREENBONE_REGISTRY }}
+          reg-auth-service: harbor-registry
           user: ${{ secrets.GREENBONE_REGISTRY_USER }}
           password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
           repository: opensight-postgres
