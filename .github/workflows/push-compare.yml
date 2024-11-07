@@ -31,7 +31,7 @@ jobs:
         with:
           command: compare-tag-annotation
           reg-domain: ${{ vars.GREENBONE_REGISTRY }}
-          reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}
+          reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}/service
           reg-auth-service: harbor-registry
           user: ${{ secrets.GREENBONE_REGISTRY_USER }}
           password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
@@ -58,7 +58,7 @@ jobs:
         uses: greenbone/actions/oci-info@v3
         with:
           reg-domain: ${{ vars.GREENBONE_REGISTRY }}
-          reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}
+          reg-auth-domain: ${{ vars.GREENBONE_REGISTRY }}/service
           reg-auth-service: harbor-registry
           user: ${{ secrets.GREENBONE_REGISTRY_USER }}
           password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
