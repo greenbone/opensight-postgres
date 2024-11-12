@@ -47,7 +47,7 @@ jobs:
       version: ${{ steps.version.outputs.output }}
 
   push-postgres:
-    needs: compare
+    needs: release
     uses: ./.github/workflows/push.yml
     with:
       postgres-major-version: ${{ inputs.postgres-major-version }}
