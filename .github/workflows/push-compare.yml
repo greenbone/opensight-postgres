@@ -9,8 +9,8 @@ on:
         description: "Postgres major version to release."
         type: string
         required: true
-      charts:
-        description: "Json list with helm charts to upgrade."
+      services:
+        description: "Json list with postgres services to upgrade."
         type: string
         required: true
     secrets:
@@ -23,20 +23,76 @@ on:
 
 jobs:
   compare:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted-generic
     steps:
       - name: Compare postgres annotation org.opencontainers.image.created
         id: compare
         uses: greenbone/actions/oci-info@v3
         with:
           command: compare-tag-annotation
+          reg-domain: ${{ vars.GREENBONE_REGISTRY }}
+          reg-auth-domain: "${{ vars.GREENBONE_REGISTRY }}/service"
+          reg-auth-service: harbor-registry
+          user: ${{ secrets.GREENBONE_REGISTRY_USER }}
+          password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
           repository: opensight-postgres
-          namespace: greenbone
+          namespace: opensight
           compare-repository: postgres
           tag: ${{ inputs.postgres-major-version }}
           mode: lt
+
+      - name: Get dockerhub postgres service tags
+        if: ${{ steps.compare.outputs.output == 'true' }}
+        id: dtags
+        uses: greenbone/actions/oci-info@v3
+        with:
+          repository: postgres
+          namespace: library
+          reg-domain: registry-1.docker.io
+          reg-auth-domain: auth.docker.io
+          reg-auth-service: registry.docker.io
+
+      - name: Get opensight-postgres service tags
+        if: ${{ steps.compare.outputs.output == 'true' }}
+        id: tags
+        uses: greenbone/actions/oci-info@v3
+        with:
+          reg-domain: ${{ vars.GREENBONE_REGISTRY }}
+          reg-auth-domain: "${{ vars.GREENBONE_REGISTRY }}/service"
+          reg-auth-service: harbor-registry
+          user: ${{ secrets.GREENBONE_REGISTRY_USER }}
+          password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
+          repository: opensight-postgres
+          namespace: opensight
+
+      - name: Increment opensight-postgres service version
+        if: ${{ steps.compare.outputs.output == 'true' }}
+        id: version
+        shell: bash
+        run: |
+          # Get latest minor version from dockerhub
+          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
+          if ! [ "$dt" ]; then
+            echo 'No postgres release in dockerhub found for ${{ inputs.postgres-major-version }}'
+            exit 1
+          fi
+          IFS='.' read -r -a dv <<< "$dt"
+          minor="${dv[1]}"
+
+          # Get the latest tag filtered by postgres major version.
+          t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E "${{ inputs.postgres-major-version }}.$minor.[0-9]+$" | sort -Vr | sed q)"
+          if ! [ "$t" ]; then
+            t="${{ inputs.postgres-major-version }}.$minor.0"
+          fi
+
+          # Increment patch level
+          IFS='.' read -r -a v <<< "$t"
+          v[2]=$((v[2] + 1))
+          echo "output=v$(IFS="."; echo "${v[*]// /}")" >> $GITHUB_OUTPUT
+
     outputs:
       compare: ${{ steps.compare.outputs.output }}
+      version: ${{ steps.version.outputs.output }}
 
   push-postgres:
     needs: compare
@@ -44,5 +100,6 @@ jobs:
     uses: ./.github/workflows/push.yml
     with:
       postgres-major-version: ${{ inputs.postgres-major-version }}
-      charts: ${{ inputs.charts }}
+      services: ${{ inputs.services }}
+      version: ${{ needs.compare.outputs.version }}
     secrets: inherit
