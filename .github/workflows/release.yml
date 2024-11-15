@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           # Get latest minor version from dockerhub
-          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
+          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '^${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
           if ! [ "$dt" ]; then
             echo "No minor found!"
             exit 1
