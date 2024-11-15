@@ -70,25 +70,38 @@ jobs:
         id: version
         shell: bash
         run: |
+          set +e
           # Get latest minor version from dockerhub
           dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '^${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
+          echo "New postgres version on dockerhub: $dt"
           if ! [ "$dt" ]; then
-            echo 'No postgres release in dockerhub found for ${{ inputs.postgres-major-version }}'
+            echo 'No postgres release on dockerhub found for major version: ${{ inputs.postgres-major-version }}'
             exit 1
           fi
+
           IFS='.' read -r -a dv <<< "$dt"
           minor="${dv[1]}"
-
+          if ! [ "$minor" ]; then
+            echo "No postgres minor version found on dockerhub: $dt"
+            exit 2
+          fi
+          echo "New minor version: $minor"
+          
           # Get the latest tag filtered by postgres major version.
           t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E "^${{ inputs.postgres-major-version }}.$minor.[0-9]+$" | sort -Vr | sed q)"
-          if ! [ "$t" ]; then
-            t="${{ inputs.postgres-major-version }}.$minor.0"
+          if [ "$t" ]; then
+            echo "Current opensight-postgres version: $t"
+            # Increment patch level
+            IFS='.' read -r -a v <<< "$t"
+            patch=$((v[2] + 1))
+            version="${{ inputs.postgres-major-version }}.$minor.$patch"
+          else
+            echo "New minor postgres version found on dockerhub: ${{ inputs.postgres-major-version }}.$minor"
+            version="${{ inputs.postgres-major-version }}.$minor.0"
           fi
 
-          # Increment patch level
-          IFS='.' read -r -a v <<< "$t"
-          v[2]=$((v[2] + 1))
-          echo "output=$(IFS="."; echo "${v[*]// /}")" >> $GITHUB_OUTPUT
+          echo "New opensight-postgres version: $version"
+          echo "output=$version" >> $GITHUB_OUTPUT
 
     outputs:
       compare: ${{ steps.compare.outputs.output }}
