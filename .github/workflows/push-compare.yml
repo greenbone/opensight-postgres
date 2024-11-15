@@ -71,7 +71,7 @@ jobs:
         shell: bash
         run: |
           # Get latest minor version from dockerhub
-          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
+          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '^${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
           if ! [ "$dt" ]; then
             echo 'No postgres release in dockerhub found for ${{ inputs.postgres-major-version }}'
             exit 1
@@ -80,7 +80,7 @@ jobs:
           minor="${dv[1]}"
 
           # Get the latest tag filtered by postgres major version.
-          t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E "${{ inputs.postgres-major-version }}.$minor.[0-9]+$" | sort -Vr | sed q)"
+          t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E "^${{ inputs.postgres-major-version }}.$minor.[0-9]+$" | sort -Vr | sed q)"
           if ! [ "$t" ]; then
             t="${{ inputs.postgres-major-version }}.$minor.0"
           fi
@@ -88,7 +88,7 @@ jobs:
           # Increment patch level
           IFS='.' read -r -a v <<< "$t"
           v[2]=$((v[2] + 1))
-          echo "output=v$(IFS="."; echo "${v[*]// /}")" >> $GITHUB_OUTPUT
+          echo "output=$(IFS="."; echo "${v[*]// /}")" >> $GITHUB_OUTPUT
 
     outputs:
       compare: ${{ steps.compare.outputs.output }}
