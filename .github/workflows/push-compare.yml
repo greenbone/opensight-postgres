@@ -93,6 +93,10 @@ jobs:
             echo "Current opensight-postgres version: $t"
             # Increment patch level
             IFS='.' read -r -a v <<< "$t"
+            if ! [ -v v[2] ]; then
+              echo "No patch level found in opensearch-postgres version: $t"
+              exit 3
+            fi
             patch=$((v[2] + 1))
             version="${{ inputs.postgres-major-version }}.$minor.$patch"
           else
