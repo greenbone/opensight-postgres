@@ -33,14 +33,19 @@ jobs:
         id: version
         shell: bash
         run: |
+          set +e
           # Get latest minor version from dockerhub
-          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
+          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '^${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
           if ! [ "$dt" ]; then
-            echo "No minor found!"
+            echo "No version found on dockerhub for postgres: ${{ inputs.postgres-major-version }}"
             exit 1
           fi
           IFS='.' read -r -a dv <<< "$dt"
           minor="${dv[1]}"
+          if ! [ "$minor" ]; then
+            echo "No minor version found on dockerhub for postgres: $dt"
+            exit 2
+          fi
           echo "output=${{ inputs.postgres-major-version }}.$minor.0" >> $GITHUB_OUTPUT
 
     outputs:

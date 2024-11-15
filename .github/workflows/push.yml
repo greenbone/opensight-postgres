@@ -60,6 +60,7 @@ jobs:
           image-tags: |
             type=raw,value=${{ inputs.postgres-major-version }}
             type=raw,value=${{ inputs.version }}
+            type=raw,value=v${{ inputs.version }}
           registry: ${{ vars.GREENBONE_REGISTRY }}
           registry-username: ${{ secrets.GREENBONE_REGISTRY_USER }}
           registry-password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
