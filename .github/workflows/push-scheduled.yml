@@ -8,25 +8,28 @@ on:
   schedule:
     - cron: '0 0 * * 3'  # Runs at 00:00 every Wednesday
 
-permissions:
-  contents: read
-  packages: write
-  id-token: write
-  pull-requests: write
-
 jobs:
   upgrade-postgres:
     strategy:
       fail-fast: false
       # We have to run one workflow after the other here
-      # because our product Helm Chart Construction Process cannot handle multiple processes.
+      # because our product compose Construction Process cannot handle multiple processes.
       max-parallel: 1
       matrix:
         include:
           - postgres-major-version: 16
-            charts: '["asset-management-postgres", "opensight-keycloak-postgres", "scan-management-postgres", "vulnerability-intelligence-postgres", "opensight-notification-service-postgres"]'
+            services: '["asset-management-postgres", "opensight-keycloak-postgres", "scan-management-postgres", "vulnerability-intelligence-postgres", "opensight-notification-service-postgres", "management-console-postgres"]'
     uses: ./.github/workflows/push-compare.yml
     with:
       postgres-major-version: ${{ matrix.postgres-major-version }}
-      charts: ${{ matrix.charts }}
+      services: ${{ matrix.services }}
+    secrets: inherit
+
+  notify:
+    needs:
+      - upgrade-postgres
+    if: ${{ !cancelled() }}
+    uses: greenbone/workflows/.github/workflows/notify-mattermost-3rd-gen.yml@main
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
     secrets: inherit

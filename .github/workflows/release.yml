@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      postgres-major-version:
+        description: "Postgres major version to release."
+        type: string
+        required: true
+      services:
+        description: "Json list with postgres services to upgrade."
+        type: string
+        required: true
+
+jobs:
+  release:
+    runs-on: self-hosted-generic
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get dockerhub postgres service tags
+        id: dtags
+        uses: greenbone/actions/oci-info@v3
+        with:
+          repository: postgres
+          namespace: library
+          reg-domain: registry-1.docker.io
+          reg-auth-domain: auth.docker.io
+          reg-auth-service: registry.docker.io
+
+      - name: Increment opensight-postgres service version
+        id: version
+        shell: bash
+        run: |
+          set +e
+          # Get latest minor version from dockerhub
+          dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '^${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
+          if ! [ "$dt" ]; then
+            echo "No version found on dockerhub for postgres: ${{ inputs.postgres-major-version }}"
+            exit 1
+          fi
+          IFS='.' read -r -a dv <<< "$dt"
+          minor="${dv[1]}"
+          if ! [ "$minor" ]; then
+            echo "No minor version found on dockerhub for postgres: $dt"
+            exit 2
+          fi
+          echo "output=${{ inputs.postgres-major-version }}.$minor.0" >> $GITHUB_OUTPUT
+
+    outputs:
+      version: ${{ steps.version.outputs.output }}
+
+  push-postgres:
+    needs: release
+    uses: ./.github/workflows/push.yml
+    with:
+      postgres-major-version: ${{ inputs.postgres-major-version }}
+      services: ${{ inputs.services }}
+      version: ${{ needs.release.outputs.version }}
+    secrets: inherit
+
+  notify:
+    needs:
+      - release
+      - push-postgres
+    if: ${{ !cancelled() }}
+    uses: greenbone/workflows/.github/workflows/notify-mattermost-3rd-gen.yml@main
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
+    secrets: inherit

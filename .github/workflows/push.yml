@@ -4,11 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       postgres-major-version:
-        description: "Postgres major version to release."
+        description: "Postgres major version to use for release."
         type: string
         required: true
-      charts:
-        description: "Json list with helm charts to upgrade."
+      services:
+        description: "Json list with postgres services to upgrade."
+        type: string
+        required: true
+      version:
+        description: "Opensight-postgres version to release."
         type: string
         required: true
 
@@ -18,8 +22,12 @@ on:
         description: "Postgres major version to release."
         type: string
         required: true
-      charts:
-        description: "Json list with helm charts to upgrade."
+      services:
+        description: "Json list with postgres services to upgrade."
+        type: string
+        required: true
+      version:
+        description: "Opensight-postgres version to release."
         type: string
         required: true
     secrets:
@@ -30,20 +38,14 @@ on:
       GREENBONE_BOT_TOKEN:
         required: true
 
-permissions:
-  contents: read
-  packages: write
-  id-token: write
-  pull-requests: write
-
 jobs:
   push-postgres:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted-generic
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and Push
+      - name: Build and Push Greenbone Registry
         id: build
         uses: greenbone/actions/container-build-push-generic@v3
         with:
@@ -51,89 +53,43 @@ jobs:
           cosign-key: ${{ secrets.COSIGN_KEY_OPENSIGHT }}
           cosign-key-password: ${{ secrets.COSIGN_KEY_PASSWORD_OPENSIGHT }}
           cosign-tlog-upload: "false"
-          image-url: ${{ github.repository }}
+          image-url: opensight/opensight-postgres
           image-labels: |
             org.opencontainers.image.vendor=Greenbone
             org.opencontainers.image.base.name=postgres:${{ inputs.postgres-major-version }}
           image-tags: |
             type=raw,value=${{ inputs.postgres-major-version }}
-          registry: ${{ vars.IMAGE_REGISTRY }}
-          registry-username: ${{ github.actor }}
-          registry-password: ${{ secrets.GITHUB_TOKEN }}
+            type=raw,value=${{ inputs.version }}
+            type=raw,value=v${{ inputs.version }}
+          registry: ${{ vars.GREENBONE_REGISTRY }}
+          registry-username: ${{ secrets.GREENBONE_REGISTRY_USER }}
+          registry-password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
           # For whatever reason, the native buildx doesn't build annotations!
           buildx-container: 'true'
 
-      - name: Helm upgrade matrix
+      - name: Service upgrade matrix
         id: upgrade
         run: |
-          echo "matrix=$(echo '${{ inputs.charts }}' | jq -r '{include:[.[] | {chart: ., digest: "${{ steps.build.outputs.digest }}" }]} | @json')" >> $GITHUB_OUTPUT
+          echo "matrix=$(echo '${{ inputs.services }}' | jq -r '{include:[.[] | {service: ., "image-url": "opensight/opensight-postgres", digest: "${{ steps.build.outputs.digest }}", version: "${{ inputs.version }}" }]} | @json')" >> $GITHUB_OUTPUT
 
     outputs:
       matrix: ${{ steps.upgrade.outputs.matrix }}
 
-  push-helm:
+  push-service:
     needs: push-postgres
     if: ${{ needs.push-postgres.outputs.matrix }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       # We have to run one workflow after the other here
-      # because our product Helm Chart Construction Process cannot handle multiple processes.
+      # because our product compose Construction Process cannot handle multiple processes.
       max-parallel: 1
       matrix: ${{ fromJSON(needs.push-postgres.outputs.matrix) }}
     steps:
-      - name: Get helm chart tags
-        id: tags
-        uses: greenbone/actions/oci-info@v3
-        with:
-          repository: "helm-charts/${{ matrix.chart }}"
-          namespace: greenbone
-          user: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Increment helm version
-        id: version
-        shell: bash
-        run: |
-          # Get the latest tag filtered by postgres major version.
-          t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E '${{ inputs.postgres-major-version }}.[0-9]+.[0-9]+' | sort -Vr | sed q)"
-          IFS='.' read -r -a v <<< "$t"
-          # Increment patch level
-          v[2]=$((v[2] + 1))
-          echo "output=v$(IFS="."; echo "${v[*]// /}")" >> $GITHUB_OUTPUT
-
       - name: Trigger product compose upgrade
         uses: greenbone/actions/trigger-workflow@v3
         with:
           token: ${{ secrets.GREENBONE_BOT_TOKEN }}
           repository: "greenbone/automatix"
           workflow: "push.yml"
-          inputs: '{"service": "${{ matrix.chart }}", "digest": "${{ matrix.digest }}", "version": "${{ steps.version.outputs.output }}"}'
-
-      - name: Trigger service helm chart upgrade
-        if: ${{ steps.version.outputs.output }}
-        uses: greenbone/actions/trigger-workflow@v3
-        with:
-          token: ${{ secrets.GREENBONE_BOT_TOKEN }}
-          repository: "greenbone/product-helm-chart"
-          workflow: "service-chart-upgrade.yml"
-          inputs: '{"chart": "${{ matrix.chart }}", "chart-version": "${{ steps.version.outputs.output }}", "container-digest": "${{ matrix.digest }}"}'
-
-      - name: Trigger product helm chart upgrade
-        if: ${{ steps.version.outputs.output }}
-        uses: greenbone/actions/trigger-workflow@v3
-        with:
-          token: ${{ secrets.GREENBONE_BOT_TOKEN }}
-          repository: "greenbone/product-helm-chart"
-          workflow: "product-chart-upgrade.yml"
-          inputs: '{"chart": "${{ matrix.chart }}", "tag": "${{ steps.version.outputs.output }}"}'
-
-  notify:
-    needs:
-      - push-postgres
-      - push-helm
-    if: ${{ !cancelled() }}
-    uses: greenbone/workflows/.github/workflows/notify-mattermost-3rd-gen.yml@main
-    with:
-      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
-    secrets: inherit
+          inputs: '{"service": "${{ matrix.service }}", "image-url": "${{ matrix.image-url }}", "digest": "${{ matrix.digest }}", "version": "${{ matrix.version }}"}'
