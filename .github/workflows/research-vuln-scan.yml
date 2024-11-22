@@ -37,7 +37,7 @@ jobs:
           github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@ea9e4e37992a54ee68a9622e985e60c8e8f12d9f # v3.27.4
         with:
           sarif_file: 'trivy-results.sarif'
           category: ${{ github.jobs[github.job].name }}
@@ -66,7 +66,7 @@ jobs:
           severity-cutoff: medium
 
       - name: Upload grype vulnerability report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@ea9e4e37992a54ee68a9622e985e60c8e8f12d9f # v3.27.4
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
           category: ${{ github.jobs[github.job].name }}
@@ -103,7 +103,7 @@ jobs:
       - name: Upload docker scout SARIF result
         id: upload-sarif
         if: ${{ github.event_name != 'pull_request_target' }}
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@ea9e4e37992a54ee68a9622e985e60c8e8f12d9f # v3.27.4
         with:
           sarif_file: sarif.output.json
           category: ${{ github.jobs[github.job].name }}
