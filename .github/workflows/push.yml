@@ -57,6 +57,7 @@ jobs:
           image-labels: |
             org.opencontainers.image.vendor=Greenbone
             org.opencontainers.image.base.name=postgres:${{ inputs.postgres-major-version }}
+            org.opencontainers.image.version=${{ inputs.version }}
           image-tags: |
             type=raw,value=${{ inputs.postgres-major-version }}
             type=raw,value=${{ inputs.version }}
