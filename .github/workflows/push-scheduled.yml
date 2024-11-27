@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - postgres-major-version: 16
-            services: '["asset-management-postgres", "opensight-keycloak-postgres", "scan-management-postgres", "vulnerability-intelligence-postgres", "opensight-notification-service-postgres", "management-console-postgres"]'
+            services: '["asset-management-postgres", "opensight-keycloak-postgres", "vulnerability-intelligence-postgres", "opensight-notification-service-postgres", "management-console-postgres"]'
     uses: ./.github/workflows/push-compare.yml
     with:
       postgres-major-version: ${{ matrix.postgres-major-version }}
