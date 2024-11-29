@@ -6,6 +6,28 @@
 
 Opensight-Postgres is utilized to provide our Opensight services with the appropriate PostgreSQL container versions.
 
+It is equivalent to the [postgres](https://hub.docker.com/_/postgres) Docker
+image. Additionally one previous major version of postgres is added to the
+image, so that it can be used to upgrade mounted database files to the
+current version.
+
+## Upgrade process
+The opensight-postgres image can be used to upgrade older database versions
+to the current version used by this image.
+
+If the database is already upgraded, this will be a no-op and the upgrade
+process will automatically terminate with exit code 0.
+
+This does not happen automatically however, since it represents a backwards
+incompatible change, and has potential to fail. It is therefore recommended
+to create backups before attempting a migration.
+
+Usage:
+
+```
+docker run -it --rm -v /path/to/database:/var/lib/postgres/data/ opensight-postgres upgradeversion inplace
+```
+
 ## Maintainer
 
 This project is maintained by [Greenbone AG](https://www.greenbone.net/).
