@@ -25,8 +25,17 @@ to create backups before attempting a migration.
 Usage:
 
 ```
-docker run -it --rm -v /path/to/database:/var/lib/postgres/data/ opensight-postgres upgradeversion inplace
+docker run \
+    -it --rm \
+    --user 999:999 \
+    -v /path/to/database:/var/lib/postgres/data/ \
+    opensight-postgres upgradeversion inplace
 ```
+
+The inplace argument is required to perform the upgrade in the same mounted
+directory. This has the implication that the database will be corrupted if
+the upgrade fails. Therefore it is recommended to create a backup before
+attempting the upgrade.
 
 ## Maintainer
 
