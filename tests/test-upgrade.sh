@@ -27,8 +27,7 @@ docker run -it --rm \
   ${DOCKER_IMAGE}:${PREVIOUS_VERSION}
 
 # Upgrade the database with the test version
-# we can build a local testing image with the following command:
-#   docker build -t ${DOCKER_IMAGE}:test .
+docker build -t ${DOCKER_IMAGE}:test .
 docker run -it --rm \
   --user 999:999 -e POSTGRES_PASSWORD=password \
   -e POSTGRES_DB=keycloak \
