@@ -32,4 +32,4 @@ ENV PGBINNEW /usr/lib/postgresql/${POSTGRES_VERSION}/bin
 ENV PGDATAOLD /var/lib/postgresql/data
 ENV PGDATANEW /var/lib/postgresql/${POSTGRES_VERSION}/data
 
-COPY bin/upgradeversion /usr/local/bin/
+COPY bin/upgradeversion.sh /usr/local/bin/upgradeversion

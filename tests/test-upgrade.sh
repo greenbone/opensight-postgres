@@ -6,13 +6,12 @@
 
 set -euo pipefail
 
+tempdir=$(mktemp -d -t opensight-postgres-test-XXXXX)
+
 cleanup() {
   sudo rm -rf "${tempdir}"
 }
-
 trap cleanup ERR
-
-tempdir=$(mktemp -d -t opensight-postgres-test-XXXXX)
 
 sudo chown -R 999:999 "${tempdir}"
 
@@ -26,4 +25,3 @@ docker run -it --rm --user 999:999 -e POSTGRES_PASSWORD=password -e POSTGRES_DB=
 sudo cat ${tempdir}/PG_VERSION
 
 cleanup
-
