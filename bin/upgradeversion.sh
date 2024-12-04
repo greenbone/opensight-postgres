@@ -31,6 +31,9 @@ fi
 # Initialize the new database, if it doesn't exist
 if [ ! -s "${PGDATANEW}/PG_VERSION" ]; then
     initdb -D ${PGDATANEW} -U "${POSTGRES_USER}"
+
+		# migrate auth settings as well
+		cp --target-directory=${PGDATANEW}/ ${PGDATAOLD}/pg_hba.conf
 fi
 
 # mitigate: 'you must have read and write access in the current directory'
