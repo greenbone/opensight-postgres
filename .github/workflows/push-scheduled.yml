@@ -5,8 +5,8 @@ name: Push scheduled postgres
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 3'  # Runs at 00:00 every Wednesday
+  #schedule:
+  #  - cron: '0 0 * * 3'  # Runs at 00:00 every Wednesday
 
 jobs:
   upgrade-postgres:
