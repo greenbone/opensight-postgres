@@ -33,3 +33,9 @@ ENV PGDATAOLD /var/lib/postgresql/data
 ENV PGDATANEW /var/lib/postgresql/${POSTGRES_VERSION}/data
 
 COPY bin/upgradeversion.sh /usr/local/bin/upgradeversion
+
+# We decided to use our own UID range.
+# INFO: https://github.com/greenbone/automatix/blob/main/README.md
+RUN find / -uid 999 -not -path "/proc/*" -exec chown 10002 {} \; && \
+  find / -gid 999 -not -path "/proc/*" -exec chown :10002 {} \;
+USER 10002:10002
