@@ -94,3 +94,34 @@ jobs:
           repository: "greenbone/automatix"
           workflow: "push.yml"
           inputs: '{"service": "${{ matrix.service }}", "image-url": "${{ matrix.image-url }}", "digest": "${{ matrix.digest }}", "version": "${{ matrix.version }}"}'
+
+  generate-and-push-sbom-trivy:
+    needs: push-postgres
+    if: ${{ needs.push-postgres.outputs.matrix }}
+    runs-on:
+      - self-hosted
+      - self-hosted-generic
+      - self-hosted-generic-vm-amd64
+    steps:
+      - name: Scan image in a private registry
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # 0.31.0
+        env:
+          TRIVY_USERNAME: ${{ secrets.GREENBONE_BOT_USERNAME }}
+          TRIVY_PASSWORD: ${{ secrets.GREENBONE_BOT_TOKEN }}
+        with:
+          image-ref: "${{ vars.GREENBONE_REGISTRY}}/opensight/opensight-postgres:${{ matrix.version }}"
+          scan-type: image
+          format: 'cyclonedx'
+          output: 'opensight-postgres.${{ matrix.version }}.sbom.json'
+          github-pat: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push and sign artifact
+        uses: greenbone/actions/push-and-sign-artifact@v3.31.0
+        with:
+          artifact-file: "opensight-postgres.${{ matrix.version }}.sbom.json"
+          artifact-url: "${{ vars.GREENBONE_REGISTRY }}/opensight/opensight-postgres-sbom:${{ matrix.version }}"
+          artifact-folder: ${{ github.workspace }}
+          registry-user: ${{ secrets.GREENBONE_REGISTRY_USER }}
+          registry-domain: ${{ vars.GREENBONE_REGISTRY }}
+          registry-token: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
+          cosign-key: ${{ secrets.COSIGN_KEY_OPENSIGHT }}
+          cosign-password: ${{ secrets.COSIGN_KEY_PASSWORD_OPENSIGHT }}
