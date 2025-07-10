@@ -39,6 +39,8 @@ fi
 # mitigate: 'you must have read and write access in the current directory'
 cd /var/lib/postgresql
 
+# Once started, pg_upgrade will verify the two clusters are compatible and then do the upgrade.
+# See https://www.postgresql.org/docs/current/pgupgrade.html
 pg_upgrade \
     -U "${POSTGRES_USER}" \
     --old-bindir ${PGBINOLD} \
