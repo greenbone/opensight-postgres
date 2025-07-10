@@ -15,22 +15,25 @@ ENV POSTGRES_OLD_VERSION=${POSTGRES_OLD_VERSION}
 
 # Enable and install old version of PostgreSQL.
 RUN sed -i "s/\$/ ${POSTGRES_OLD_VERSION}/" /etc/apt/sources.list.d/pgdg.list
+RUN echo "deb http://deb.debian.org/debian bookworm-backports main" >> /etc/apt/sources.list
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		postgresql-${POSTGRES_OLD_VERSION} \
+        golang-1.23/bookworm-backports \ 
 	; \
 	rm -rf /var/lib/apt/lists/*
 
+
 # The old binaries will be in /usr/lib/postgresql/16/bin
-ENV PGBINOLD /usr/lib/postgresql/${POSTGRES_OLD_VERSION}/bin
-ENV PGBINNEW /usr/lib/postgresql/${POSTGRES_VERSION}/bin
+ENV PGBINOLD=/usr/lib/postgresql/${POSTGRES_OLD_VERSION}/bin
+ENV PGBINNEW=/usr/lib/postgresql/${POSTGRES_VERSION}/bin
 
 # we are usually using /var/lib/postgresql/data as the data directory
 # so this is why we are using it for the 'old' version instead of the
 # path that is customized for the version.
-ENV PGDATAOLD /var/lib/postgresql/data
-ENV PGDATANEW /var/lib/postgresql/${POSTGRES_VERSION}/data
+ENV PGDATAOLD=/var/lib/postgresql/data
+ENV PGDATANEW=/var/lib/postgresql/${POSTGRES_VERSION}/data
 
 COPY bin/upgradeversion.sh /usr/local/bin/upgradeversion
 
