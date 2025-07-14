@@ -27,8 +27,7 @@ COPY bin/upgradeversion.sh /usr/local/bin/upgradeversion
 
 FROM base AS install
 # Enable and install old version of PostgreSQL.
-RUN sed -i "s/\$/ ${POSTGRES_OLD_VERSION}/" /etc/apt/sources.list.d/pgdg.list
-RUN echo "deb http://deb.debian.org/debian bookworm-backports main" >> /etc/apt/sources.list
+RUN sed -i "s/\$/ ${POSTGRES_OLD_VERSION}/" /etc/apt/sources.list.d/pgdg.list;
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -37,12 +36,10 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*;
 
 FROM install AS no-gosu
-
 RUN set -eux; \
     rm -rf /usr/local/bin/gosu;
 
 FROM postgres:${POSTGRES_VERSION} AS su-exec
-
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends gcc libc-dev curl ca-certificates; \
@@ -51,9 +48,7 @@ RUN set -eux; \
     gcc -Wall /usr/local/bin/su-exec.c -o /usr/local/bin/su-exec;
 
 FROM no-gosu AS runtime
-
 COPY --from=su-exec --chown=root:root --chmod=755 /usr/local/bin/su-exec /usr/local/bin/gosu
-
 # We decided to use our own UID range.
 # INFO: https://github.com/greenbone/automatix/blob/main/README.md
 # Change to user root user to run the commands.
