@@ -39,6 +39,6 @@ COPY bin/upgradeversion.sh /usr/local/bin/upgradeversion
 # Change to user root user to run the commands.
 USER 0:0
 RUN groupmod -g 10002 postgres && usermod -u 10002 -g 10002 postgres && \
-  find / -uid 999 -not -path "/proc/*" -exec chown 10002 {} \; && \
-  find / -gid 999 -not -path "/proc/*" -exec chown :10002 {} \;
+  find / -uid 999 -not -path "/proc/*" -prune -exec chown 10002 {} \; && \
+  find / -gid 999 -not -path "/proc/*" -prune -exec chown :10002 {} \;
 USER 10002:10002
