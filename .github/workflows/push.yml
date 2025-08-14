@@ -94,3 +94,14 @@ jobs:
           repository: "greenbone/automatix"
           workflow: "push.yml"
           inputs: '{"service": "${{ matrix.service }}", "image-url": "${{ matrix.image-url }}", "digest": "${{ matrix.digest }}", "version": "${{ matrix.version }}"}'
+
+  generate-and-push-sbom-trivy:
+    name: Scan image and push SBOM
+    if: ${{ needs.push-postgres.outputs.matrix }}
+    needs: push-postgres
+    uses: greenbone/workflows/.github/workflows/generate-and-push-sbom-with-trivy-3rd-gen.yml@main
+    with:
+      image-url: "${{ vars.GREENBONE_REGISTRY}}/opensight/opensight-postgres:${{ matrix.version }}"
+      output-file-name: 'opensight-postgres.${{ matrix.version }}.sbom.json'
+      artifact-url: "${{ vars.GREENBONE_REGISTRY }}/opensight-dev/opensight-postgres-sbom:${{ matrix.version }}"
+    secrets: inherit
