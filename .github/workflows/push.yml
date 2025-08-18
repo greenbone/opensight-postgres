@@ -76,6 +76,23 @@ jobs:
     outputs:
       matrix: ${{ steps.upgrade.outputs.matrix }}
 
+  harbor-replication:
+    needs: push-postgres
+    runs-on: self-hosted-generic
+    steps:
+      - name: Trigger harbor replication
+        shell: bash
+        run: |
+          if ! [ '${{ secrets.GREENBONE_REGISTRY_REPLICATION_TOKEN }}' ]; then
+            echo "Secret GREENBONE_REGISTRY_REPLICATION_TOKEN does not exist"
+            exit 0
+          fi
+          curl --fail-with-body -X POST \
+            https://${{ vars.GREENBONE_REGISTRY }}/api/v2.0/replication/executions \
+            -u '${{ secrets.GREENBONE_REGISTRY_REPLICATION_USER }}:${{ secrets.GREENBONE_REGISTRY_REPLICATION_TOKEN }}' \
+            -H "Content-Type: application/json" \
+            -d '{"policy_id": 1}'
+
   push-service:
     needs: push-postgres
     if: ${{ needs.push-postgres.outputs.matrix }}
