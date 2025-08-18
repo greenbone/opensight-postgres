@@ -119,6 +119,8 @@ jobs:
     uses: greenbone/workflows/.github/workflows/generate-and-push-sbom-with-trivy-3rd-gen.yml@main
     with:
       image-url: "${{ vars.GREENBONE_REGISTRY}}/opensight/opensight-postgres:${{ inputs.version }}"
+      image-registry-username-secret-name: "GREENBONE_REGISTRY_READ_USER"
+      image-registry-password-secret-name: "GREENBONE_REGISTRY_READ_TOKEN"
       output-file-name: 'opensight-postgres.${{ inputs.version }}.sbom.json'
       artifact-url: "${{ vars.GREENBONE_REGISTRY }}/opensight-dev/opensight-postgres-sbom:${{ inputs.version }}"
     secrets: inherit
