@@ -101,7 +101,7 @@ jobs:
     needs: push-postgres
     uses: greenbone/workflows/.github/workflows/generate-and-push-sbom-with-trivy-3rd-gen.yml@main
     with:
-      image-url: "${{ vars.GREENBONE_REGISTRY}}/opensight/opensight-postgres:${{ matrix.version }}"
-      output-file-name: 'opensight-postgres.${{ matrix.version }}.sbom.json'
-      artifact-url: "${{ vars.GREENBONE_REGISTRY }}/opensight-dev/opensight-postgres-sbom:${{ matrix.version }}"
+      image-url: "${{ vars.GREENBONE_REGISTRY}}/opensight/opensight-postgres:${{ inputs.version }}"
+      output-file-name: 'opensight-postgres.${{ inputs.version }}.sbom.json'
+      artifact-url: "${{ vars.GREENBONE_REGISTRY }}/opensight-dev/opensight-postgres-sbom:${{ inputs.version }}"
     secrets: inherit
