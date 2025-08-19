@@ -23,14 +23,14 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 # The old binaries will be in /usr/lib/postgresql/16/bin
-ENV PGBINOLD /usr/lib/postgresql/${POSTGRES_OLD_VERSION}/bin
-ENV PGBINNEW /usr/lib/postgresql/${POSTGRES_VERSION}/bin
+ENV PGBINOLD=/usr/lib/postgresql/${POSTGRES_OLD_VERSION}/bin
+ENV PGBINNEW=/usr/lib/postgresql/${POSTGRES_VERSION}/bin
 
 # we are usually using /var/lib/postgresql/data as the data directory
 # so this is why we are using it for the 'old' version instead of the
 # path that is customized for the version.
-ENV PGDATAOLD /var/lib/postgresql/data
-ENV PGDATANEW /var/lib/postgresql/${POSTGRES_VERSION}/data
+ENV PGDATAOLD=/var/lib/postgresql/data
+ENV PGDATANEW=/var/lib/postgresql/${POSTGRES_VERSION}/data
 
 COPY bin/upgradeversion.sh /usr/local/bin/upgradeversion
 
@@ -39,6 +39,6 @@ COPY bin/upgradeversion.sh /usr/local/bin/upgradeversion
 # Change to user root user to run the commands.
 USER 0:0
 RUN groupmod -g 10002 postgres && usermod -u 10002 -g 10002 postgres && \
-  find / -uid 999 -not -path "/proc/*" -exec chown 10002 {} \; && \
-  find / -gid 999 -not -path "/proc/*" -exec chown :10002 {} \;
+  find / -path /proc -prune -o -uid 999 -exec chown 10002 {} \; && \
+  find / -path /proc -prune -o -gid 999 -exec chown :10002 {} \;
 USER 10002:10002
