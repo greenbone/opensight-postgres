@@ -76,8 +76,23 @@ jobs:
     outputs:
       matrix: ${{ steps.upgrade.outputs.matrix }}
 
-  harbor-replication:
+  push-sbom:
+    name: Scan image and push SBOM
+    if: ${{ needs.push-postgres.outputs.matrix }}
     needs: push-postgres
+    uses: greenbone/workflows/.github/workflows/generate-and-push-sbom-with-trivy-3rd-gen.yml@main
+    with:
+      image-url: "${{ vars.GREENBONE_REGISTRY}}/opensight-dev/opensight-postgres:${{ inputs.version }}"
+      image-registry-username-secret-name: "GREENBONE_REGISTRY_READ_USER"
+      image-registry-password-secret-name: "GREENBONE_REGISTRY_READ_TOKEN"
+      output-file-name: 'opensight-postgres.${{ inputs.version }}.sbom.json'
+      artifact-url: "${{ vars.GREENBONE_REGISTRY }}/opensight-dev/opensight-postgres-sbom:${{ inputs.version }}"
+    secrets: inherit
+
+  harbor-replication:
+    needs:
+      - push-postgres
+      - push-sbom
     runs-on: self-hosted-generic
     steps:
       - name: Trigger harbor replication
@@ -94,7 +109,10 @@ jobs:
             -d '{"policy_id": 1}'
 
   push-service:
-    needs: push-postgres
+    needs:
+      - push-postgres
+      - push-sbom
+      - harbor-replication
     if: ${{ needs.push-postgres.outputs.matrix }}
     runs-on: ubuntu-latest
     strategy:
@@ -111,16 +129,3 @@ jobs:
           repository: "greenbone/automatix"
           workflow: "push.yml"
           inputs: '{"service": "${{ matrix.service }}", "image-url": "${{ matrix.image-url }}", "digest": "${{ matrix.digest }}", "version": "${{ matrix.version }}"}'
-
-  generate-and-push-sbom-trivy:
-    name: Scan image and push SBOM
-    if: ${{ needs.push-postgres.outputs.matrix }}
-    needs: push-postgres
-    uses: greenbone/workflows/.github/workflows/generate-and-push-sbom-with-trivy-3rd-gen.yml@main
-    with:
-      image-url: "${{ vars.GREENBONE_REGISTRY}}/opensight-dev/opensight-postgres:${{ inputs.version }}"
-      image-registry-username-secret-name: "GREENBONE_REGISTRY_READ_USER"
-      image-registry-password-secret-name: "GREENBONE_REGISTRY_READ_TOKEN"
-      output-file-name: 'opensight-postgres.${{ inputs.version }}.sbom.json'
-      artifact-url: "${{ vars.GREENBONE_REGISTRY }}/opensight-dev/opensight-postgres-sbom:${{ inputs.version }}"
-    secrets: inherit
