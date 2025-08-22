@@ -36,7 +36,7 @@ jobs:
           user: ${{ secrets.GREENBONE_REGISTRY_USER }}
           password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
           repository: opensight-postgres
-          namespace: opensight
+          namespace: opensight-dev
           compare-repository: postgres
           tag: ${{ inputs.postgres-major-version }}
           mode: lt
@@ -63,7 +63,7 @@ jobs:
           user: ${{ secrets.GREENBONE_REGISTRY_USER }}
           password: ${{ secrets.GREENBONE_REGISTRY_TOKEN }}
           repository: opensight-postgres
-          namespace: opensight
+          namespace: opensight-dev
 
       - name: Increment opensight-postgres service version
         if: ${{ steps.compare.outputs.output == 'true' }}
@@ -71,9 +71,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          # Get latest minor version from dockerhub
+          # Get latest postgres minor version from dockerhub filtered by major version.
           dt="$(echo -e '${{ steps.dtags.outputs.output }}' | grep -E '^${{ inputs.postgres-major-version }}.[0-9]+$' | sort -Vr | sed q)"
-          echo "New postgres version on dockerhub: $dt"
+          echo "Current postgres version on dockerhub: $dt"
           if ! [ "$dt" ]; then
             echo 'No postgres release on dockerhub found for major version: ${{ inputs.postgres-major-version }}'
             exit 1
@@ -85,9 +85,8 @@ jobs:
             echo "No postgres minor version found on dockerhub: $dt"
             exit 2
           fi
-          echo "New minor version: $minor"
           
-          # Get the latest tag filtered by postgres major version.
+          # Get the latest opensight-postgres tag filtered by dockerhub postgres minor version.
           t="$(echo -e '${{ steps.tags.outputs.output }}' | grep -E "^${{ inputs.postgres-major-version }}.$minor.[0-9]+$" | sort -Vr | sed q)"
           if [ "$t" ]; then
             echo "Current opensight-postgres version: $t"
