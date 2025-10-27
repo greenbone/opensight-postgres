@@ -36,7 +36,7 @@ jobs:
           TRIVY_PASSWORD: ${{ secrets.GREENBONE_REGISTRY_READ_TOKEN }}
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@16140ae1a102900babc80a33c44059580f687047 # v3.29.5
+        uses: github/codeql-action/upload-sarif@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v3.29.5
         with:
           sarif_file: 'trivy-results.sarif'
           category: ${{ github.jobs[github.job].name }}
@@ -60,7 +60,7 @@ jobs:
           password: ${{ secrets.GREENBONE_REGISTRY_READ_TOKEN }}
 
       - name: Run the Anchore Grype scan action
-        uses: anchore/scan-action@a5605eb0943e46279cb4fbd9d44297355d3520ab
+        uses: anchore/scan-action@568b89d27fc18c60e56937bff480c91c772cd993
         id: grype
         with:
           image: '${{ vars.GREENBONE_REGISTRY }}/opensight/opensight-postgres:16'
@@ -68,7 +68,7 @@ jobs:
           severity-cutoff: medium
 
       - name: Upload grype vulnerability report
-        uses: github/codeql-action/upload-sarif@16140ae1a102900babc80a33c44059580f687047 # v3.29.5
+        uses: github/codeql-action/upload-sarif@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v3.29.5
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
           category: ${{ github.jobs[github.job].name }}
@@ -108,7 +108,7 @@ jobs:
       - name: Upload docker scout SARIF result
         id: upload-sarif
         if: ${{ github.event_name != 'pull_request_target' }}
-        uses: github/codeql-action/upload-sarif@16140ae1a102900babc80a33c44059580f687047 # v3.29.5
+        uses: github/codeql-action/upload-sarif@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v3.29.5
         with:
           sarif_file: sarif.output.json
           category: ${{ github.jobs[github.job].name }}
