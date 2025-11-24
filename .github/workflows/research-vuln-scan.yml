@@ -20,7 +20,7 @@ jobs:
     runs-on: self-hosted-generic
     steps:
       - name: Checkout code
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.2.2
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v4.2.2
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
@@ -36,7 +36,7 @@ jobs:
           TRIVY_PASSWORD: ${{ secrets.GREENBONE_REGISTRY_READ_TOKEN }}
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@0499de31b99561a6d14a36a5f662c2a54f91beee # v3.29.5
+        uses: github/codeql-action/upload-sarif@e12f0178983d466f2f6028f5cc7a6d786fd97f4b # v3.29.5
         with:
           sarif_file: 'trivy-results.sarif'
           category: ${{ github.jobs[github.job].name }}
@@ -50,7 +50,7 @@ jobs:
     runs-on: self-hosted-generic
     steps:
       - name: Checkout code
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.2.2
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v4.2.2
 
       - name: Login to Greenbone Product container registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef #v3.6.0
@@ -60,7 +60,7 @@ jobs:
           password: ${{ secrets.GREENBONE_REGISTRY_READ_TOKEN }}
 
       - name: Run the Anchore Grype scan action
-        uses: anchore/scan-action@568b89d27fc18c60e56937bff480c91c772cd993
+        uses: anchore/scan-action@3aaf50d765cfcceafa51d322ccb790e40f6cd8c5
         id: grype
         with:
           image: '${{ vars.GREENBONE_REGISTRY }}/opensight/opensight-postgres:16'
@@ -68,7 +68,7 @@ jobs:
           severity-cutoff: medium
 
       - name: Upload grype vulnerability report
-        uses: github/codeql-action/upload-sarif@0499de31b99561a6d14a36a5f662c2a54f91beee # v3.29.5
+        uses: github/codeql-action/upload-sarif@e12f0178983d466f2f6028f5cc7a6d786fd97f4b # v3.29.5
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
           category: ${{ github.jobs[github.job].name }}
@@ -83,7 +83,7 @@ jobs:
     runs-on: self-hosted-generic
     steps:
       - name: Checkout code
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.2.2
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v4.2.2
 
       - name: Login to Greenbone Product container registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef #v3.6.0
@@ -108,7 +108,7 @@ jobs:
       - name: Upload docker scout SARIF result
         id: upload-sarif
         if: ${{ github.event_name != 'pull_request_target' }}
-        uses: github/codeql-action/upload-sarif@0499de31b99561a6d14a36a5f662c2a54f91beee # v3.29.5
+        uses: github/codeql-action/upload-sarif@e12f0178983d466f2f6028f5cc7a6d786fd97f4b # v3.29.5
         with:
           sarif_file: sarif.output.json
           category: ${{ github.jobs[github.job].name }}
