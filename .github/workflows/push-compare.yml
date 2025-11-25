@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Compare postgres annotation org.opencontainers.image.created
         id: compare
-        uses: greenbone/actions/oci-info@v3
+        uses: greenbone/actions/oci-info@pascalholthaus-patch-1
         with:
           command: compare-tag-annotation
           reg-domain: ${{ vars.GREENBONE_REGISTRY }}
@@ -44,7 +44,7 @@ jobs:
       - name: Get dockerhub postgres service tags
         if: ${{ steps.compare.outputs.output == 'true' }}
         id: dtags
-        uses: greenbone/actions/oci-info@v3
+        uses: greenbone/actions/oci-info@pascalholthaus-patch-1
         with:
           repository: postgres
           namespace: library
@@ -55,7 +55,7 @@ jobs:
       - name: Get opensight-postgres service tags
         if: ${{ steps.compare.outputs.output == 'true' }}
         id: tags
-        uses: greenbone/actions/oci-info@v3
+        uses: greenbone/actions/oci-info@pascalholthaus-patch-1
         with:
           reg-domain: ${{ vars.GREENBONE_REGISTRY }}
           reg-auth-domain: "${{ vars.GREENBONE_REGISTRY }}/service"
